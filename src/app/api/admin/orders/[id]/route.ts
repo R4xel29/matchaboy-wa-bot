@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { logAdminAction } from '@/lib/admin-logger';
 
 export async function PATCH(
     request: Request,
@@ -22,6 +23,15 @@ export async function PATCH(
         }
 
         const { id } = await params;
+        const existingOrder = await prisma.order.findUnique({
+            where: { id },
+            select: { id: true, status: true, customerName: true }
+        });
+
+        if (!existingOrder) {
+            return new NextResponse('Order not found', { status: 404 });
+        }
+
         const order = await prisma.order.update({
             where: {
                 id,
@@ -29,6 +39,14 @@ export async function PATCH(
             data: {
                 status,
             },
+        });
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entity: 'ORDER',
+            entityId: id,
+            details: `Mengubah status pesanan #${id.slice(-6).toUpperCase()} (${existingOrder.customerName}) dari ${existingOrder.status} menjadi ${status}`
         });
 
         return NextResponse.json(order);

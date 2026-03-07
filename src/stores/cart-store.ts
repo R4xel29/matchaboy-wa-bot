@@ -93,7 +93,7 @@ export const useCartStore = create<CartState>()(
             totalPrice: () => get().items.reduce((sum, i) => sum + i.totalPrice, 0),
         }),
         {
-            name: 'mattchaboy-cart-v1',
+            name: 'Matchaboy-cart-v1',
             storage: createJSONStorage(() => localStorage),
             version: 1,
         }

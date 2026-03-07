@@ -3,7 +3,7 @@ import type { Category, Product, StoreLocation, AddOn } from '@/types';
 // ── Store Configuration ─────────────────────────────────────
 
 export const STORE: StoreLocation = {
-    name: 'Mattchaboy HQ',
+    name: 'Matchaboy HQ',
     lat: -6.2088,    // Jakarta
     lng: 106.8456,
     address: 'Jl. Matcha No. 1, Jakarta Selatan',

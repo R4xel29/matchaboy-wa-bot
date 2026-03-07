@@ -3,30 +3,35 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowLeft } from 'lucide-react';
-import { PRODUCTS } from '@/lib/constants';
 import { formatRupiah } from '@/lib/utils';
-import type { Product } from '@/types';
+import type { Product, Category } from '@/types';
 
 interface SearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   onProductSelect: (product: Product) => void;
+  products: Product[];
+  categories: Category[];
 }
 
-export function SearchOverlay({ isOpen, onClose, onProductSelect }: SearchOverlayProps) {
+export function SearchOverlay({ isOpen, onClose, onProductSelect, products, categories }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const results = query.trim().length > 0
-    ? PRODUCTS.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.description.toLowerCase().includes(query.toLowerCase()) ||
-          p.category.toLowerCase().includes(query.toLowerCase())
+    ? products.filter(
+        (p) => {
+          const catName = categories.find(c => c.id === p.category)?.name.toLowerCase() || '';
+          return (
+            p.name.toLowerCase().includes(query.toLowerCase()) ||
+            p.description?.toLowerCase().includes(query.toLowerCase()) ||
+            catName.includes(query.toLowerCase())
+          );
+        }
       )
     : [];
 
-  const popular = PRODUCTS.filter((p) => p.badge === 'best-seller');
+  const popular = products.filter((p) => p.badge === 'best-seller');
 
   // Focus input on open
   useEffect(() => {

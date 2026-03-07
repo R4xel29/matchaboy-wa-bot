@@ -129,7 +129,6 @@ export function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-br from-matcha-200/60 via-matcha-300/40 to-matcha-100/50 -z-0" />
             </div>
 
             <div className="px-5 pt-4 pb-6 space-y-5">

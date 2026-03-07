@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Navigation, Search, AlertTriangle, Check } from 'lucide-react';
+import { MapPin, Navigation, Search, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { GoogleMap, Marker, Circle, useJsApiLoader } from '@react-google-maps/api';
 import { STORE, DELIVERY_CONFIG } from '@/lib/constants';
 import { getDistanceFromStore, calculateDeliveryFee, isWithinDeliveryRange } from '@/lib/delivery-utils';
 import { formatRupiah } from '@/lib/utils';
@@ -37,6 +38,28 @@ export function MapPicker({ onLocationSelect, initialLat, initialLng }: MapPicke
   const [selectedLocation, setSelectedLocation] = useState<typeof PRESET_LOCATIONS[0] | null>(null);
   const [pinLat, setPinLat] = useState(initialLat ?? STORE.lat);
   const [pinLng, setPinLng] = useState(initialLng ?? STORE.lng);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+  });
+
+  const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const newLat = e.latLng.lat();
+      const newLng = e.latLng.lng();
+      setPinLat(newLat);
+      setPinLng(newLng);
+      // Automatically select custom location
+      setSelectedLocation({
+        name: 'Lokasi Custom (Pin)',
+        detail: `Kordinat: ${newLat.toFixed(4)}, ${newLng.toFixed(4)}`,
+        lat: newLat,
+        lng: newLng
+      });
+      setSearchQuery('Lokasi Custom (Pin)');
+    }
+  }, []);
 
   const distance = getDistanceFromStore(pinLat, pinLng);
   const deliveryFee = calculateDeliveryFee(distance);
@@ -114,70 +137,59 @@ export function MapPicker({ onLocationSelect, initialLat, initialLng }: MapPicke
         Gunakan lokasi saat ini
       </button>
 
-      {/* Dummy Map Visual */}
-      <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-matcha-50 border border-border">
-        {/* Grid pattern to simulate map */}
-        <div className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: `
-              linear-gradient(#1B4332 1px, transparent 1px),
-              linear-gradient(90deg, #1B4332 1px, transparent 1px)
-            `,
-            backgroundSize: '30px 30px',
-          }}
-        />
-
-        {/* Road-like lines */}
-        <div className="absolute top-1/2 left-0 right-0 h-px bg-matcha-300/40" />
-        <div className="absolute top-0 bottom-0 left-1/2 w-px bg-matcha-300/40" />
-        <div className="absolute top-1/4 left-0 right-0 h-px bg-matcha-200/30" />
-        <div className="absolute top-3/4 left-0 right-0 h-px bg-matcha-200/30" />
-        <div className="absolute top-0 bottom-0 left-1/4 w-px bg-matcha-200/30" />
-        <div className="absolute top-0 bottom-0 left-3/4 w-px bg-matcha-200/30" />
-
-        {/* Store marker */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <div className="relative">
-            <div className="w-8 h-8 rounded-xl bg-matcha-700 flex items-center justify-center shadow-lg shadow-matcha-700/30">
-              <span className="text-white font-heading font-bold text-xs">M</span>
-            </div>
-            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-matcha-700 whitespace-nowrap bg-white/80 px-1.5 py-0.5 rounded">
-              Toko
-            </span>
+      {/* Real Google Map Visual */}
+      <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-muted border border-border">
+        {!isLoaded ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-matcha-50">
+            <Loader2 className="w-8 h-8 animate-spin text-matcha-600" />
           </div>
-        </div>
-
-        {/* Delivery radius circle */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-          w-[70%] aspect-square rounded-full border-2 border-dashed border-matcha-400/30 bg-matcha-400/5"
-        />
-
-        {/* User pin — shown when location is selected */}
-        {selectedLocation && (
-          <motion.div
-            initial={{ y: -30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            className="absolute z-20"
-            style={{
-              top: `${50 + (pinLat - STORE.lat) * 800}%`,
-              left: `${50 + (pinLng - STORE.lng) * 800}%`,
-              transform: 'translate(-50%, -100%)',
+        ) : (
+          <GoogleMap
+            mapContainerStyle={{ width: '100%', height: '100%' }}
+            center={{ lat: pinLat, lng: pinLng }}
+            zoom={14}
+            onClick={onMapClick}
+            options={{
+              disableDefaultUI: true,
+              zoomControl: true,
             }}
           >
-            <div className="flex flex-col items-center">
-              <MapPin className="w-8 h-8 text-red-500 drop-shadow-lg" fill="#EF4444" />
-              <div className="w-2 h-2 rounded-full bg-red-500/30 mt-[-2px]" />
-            </div>
-          </motion.div>
-        )}
+            {/* Store marker */}
+            <Marker
+              position={{ lat: STORE.lat, lng: STORE.lng }}
+              icon={{
+                path: typeof window !== "undefined" ? window.google.maps.SymbolPath.CIRCLE : 0,
+                scale: 8,
+                fillColor: "#1B4332",
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffffff",
+              }}
+            />
 
-        {/* Map label */}
-        <div className="absolute bottom-2 right-2 px-2 py-1 rounded-lg bg-white/80 backdrop-blur-sm">
-          <span className="text-[9px] text-muted-foreground font-medium">
-            📍 Dummy Map — Preview Mode
-          </span>
-        </div>
+            {/* Delivery radius circle */}
+            <Circle
+              center={{ lat: STORE.lat, lng: STORE.lng }}
+              radius={DELIVERY_CONFIG.maxDistanceKm * 1000}
+              options={{
+                fillColor: "#1B4332",
+                fillOpacity: 0.05,
+                strokeColor: "#1B4332",
+                strokeOpacity: 0.3,
+                strokeWeight: 2,
+                clickable: false,
+              }}
+            />
+
+            {/* User pin */}
+            {selectedLocation && (
+              <Marker
+                position={{ lat: pinLat, lng: pinLng }}
+                animation={typeof window !== "undefined" ? window.google.maps.Animation.DROP : undefined}
+              />
+            )}
+          </GoogleMap>
+        )}
       </div>
 
       {/* Preset Location Suggestions */}

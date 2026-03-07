@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -22,6 +23,8 @@ import {
   Minus,
   ShoppingBag,
   Truck,
+  X,
+  ArrowRight,
 } from 'lucide-react';
 import { useCartStore } from '@/stores/cart-store';
 import { useLocationStore } from '@/stores/location-store';
@@ -45,6 +48,14 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { status } = useSession();
+  const [showAuthPopup, setShowAuthPopup] = useState(false);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      setShowAuthPopup(true);
+    }
+  }, [status]);
   const items = useCartStore((s) => s.items);
   const totalPrice = useCartStore((s) => s.totalPrice);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
@@ -82,7 +93,7 @@ export default function CheckoutPage() {
   const handleWhatsAppVerify = () => {
     const adminPhone = '6281234567890';
     const message = encodeURIComponent(
-      `Halo Mattchaboy! Saya ingin verifikasi pesanan COD.\n\nNama: (akan terisi)\nAlamat: ${address?.label ?? '-'}`
+      `Halo Matchaboy! Saya ingin verifikasi pesanan COD.\n\nNama: (akan terisi)\nAlamat: ${address?.label ?? '-'}`
     );
     window.open(`https://wa.me/${adminPhone}?text=${message}`, '_blank');
     setWhatsappVerified(true);
@@ -104,7 +115,8 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           price: item.basePrice,
           totalPrice: item.totalPrice,
-          modsString: `${item.iceLevel}, ${item.sugarLevel}${item.addOns.length > 0 ? ', +' + item.addOns.map(a => a.name).join(', +') : ''}`
+          modsString: `${item.iceLevel}, ${item.sugarLevel}${item.addOns.length > 0 ? ', +' + item.addOns.map(a => a.name).join(', +') : ''}`,
+          addOnIds: item.addOns.map(a => a.id)
         })),
         deliveryFee: address?.deliveryFee || 0,
       };
@@ -156,6 +168,63 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-dvh bg-background pb-safe">
+      {/* Auth Suggestion Popup */}
+      <AnimatePresence>
+        {showAuthPopup && status === 'unauthenticated' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl border border-border"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-full bg-matcha-50 flex items-center justify-center">
+                  <User className="w-6 h-6 text-matcha-600" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPopup(false)}
+                  className="p-2 -mr-2 text-muted-foreground hover:bg-muted flex items-center justify-center rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <h3 className="font-heading font-bold text-xl text-foreground mb-2">
+                Pesan Lebih Cepat!
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Masuk atau daftar sekarang untuk kemudahan menyimpan alamat, melacak pesanan, dan mengumpulkan promo menarik Matchaboy.
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => router.push('/login?callbackUrl=/checkout')}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl gradient-matcha text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                >
+                  Masuk / Daftar
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPopup(false)}
+                  className="w-full py-3 rounded-xl border border-border bg-transparent text-foreground font-semibold text-sm hover:bg-muted transition-colors"
+                >
+                  Nanti Saja
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center gap-3 px-4 py-3 max-w-2xl mx-auto">
@@ -314,7 +383,7 @@ export default function CheckoutPage() {
               </label>
               <input
                 {...register('notes')}
-                placeholder="Catatan untuk driver..."
+                placeholder="Catatan untuk pesanan..."
                 className="w-full px-4 py-3 rounded-xl border border-border bg-card 
                   text-sm focus:outline-none focus:ring-2 focus:ring-matcha-500/30 focus:border-matcha-500
                   transition-all"

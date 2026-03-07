@@ -19,15 +19,15 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Mattchaboy — New Culture Matcha",
+  title: "Matchaboy — New Culture Matcha",
   description:
-    "Premium matcha drinks & pastries delivered to your door. Order from Mattchaboy, Jakarta's favorite matcha specialist.",
+    "Premium matcha drinks & pastries delivered to your door. Order from Matchaboy, Jakarta's favorite matcha specialist.",
   keywords: ["matcha", "matcha latte", "delivery", "Jakarta", "matcha drink"],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Mattchaboy",
+    title: "Matchaboy",
   },
 };
 

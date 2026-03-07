@@ -2,21 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { motion, useMotionValueEvent, useScroll } from 'framer-motion';
-import { Search, User, MapPin } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Search, User } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 
 interface AppHeaderProps {
   onSearchClick?: () => void;
 }
 
 export function AppHeader({ onSearchClick }: AppHeaderProps) {
+  const { data: session } = useSession();
   const [scrolled, setScrolled] = useState(false);
   const { scrollY } = useScroll();
   const router = useRouter();
+  const pathname = usePathname();
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 80);
   });
+
+  // Hide AppHeader on the profile page and checkout because they have their own headers
+  if (pathname?.startsWith('/profile') || pathname?.startsWith('/checkout') || pathname?.startsWith('/orders')) {
+    return null;
+  }
+
+  const handleProfileClick = () => {
+    const role = session?.user?.role;
+    if (role === 'ADMIN' || role === 'CASHIER') {
+      router.push('/admin');
+    } else {
+      router.push('/profile');
+    }
+  };
 
   return (
     <motion.header
@@ -41,43 +59,30 @@ export function AppHeader({ onSearchClick }: AppHeaderProps) {
       <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-matcha-700 flex items-center justify-center shadow-sm">
-            <span className="text-white font-heading font-bold text-lg leading-none">
-              M
-            </span>
+          <div className="w-10 h-10 rounded-xl bg-matcha-700/5 flex items-center justify-center shadow-sm overflow-hidden p-1.5 border border-matcha-700/10 backdrop-blur-sm">
+            <Image 
+              src="/icons/matcha.webp" 
+              alt="Matchaboy Logo" 
+              width={32} 
+              height={32} 
+              className="object-contain"
+            />
           </div>
           <motion.span
             className="font-heading font-bold text-lg tracking-tight"
             animate={{ color: scrolled ? '#1B4332' : '#FFFFFF' }}
             transition={{ duration: 0.25 }}
           >
-            mattchaboy
+            Matchaboy
           </motion.span>
         </div>
 
-        {/* Address Pill */}
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full max-w-[180px]
-            bg-white/20 backdrop-blur-sm border border-white/10
-            hover:bg-white/30 transition-colors touch-target"
-          aria-label="Change delivery address"
-        >
-          <MapPin className={`w-3.5 h-3.5 shrink-0 ${scrolled ? 'text-matcha-600' : 'text-matcha-400'}`} />
-          <motion.span
-            className="text-xs font-medium truncate"
-            animate={{ color: scrolled ? '#1A1A1A' : '#FFFFFF' }}
-            transition={{ duration: 0.25 }}
-          >
-            Pilih alamat...
-          </motion.span>
-        </button>
 
         {/* Right Icons */}
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onSearchClick}
-            className="w-10 h-10 flex items-center justify-center rounded-full 
-              hover:bg-matcha-100/50 transition-colors touch-target"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-matcha-100/50 transition-colors touch-target"
             aria-label="Search"
           >
             <Search
@@ -87,9 +92,8 @@ export function AppHeader({ onSearchClick }: AppHeaderProps) {
             />
           </button>
           <button
-            onClick={() => router.push('/profile')}
-            className="w-10 h-10 flex items-center justify-center rounded-full 
-              hover:bg-matcha-100/50 transition-colors touch-target"
+            onClick={handleProfileClick}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-matcha-100/50 transition-colors touch-target"
             aria-label="Profile"
           >
             <User

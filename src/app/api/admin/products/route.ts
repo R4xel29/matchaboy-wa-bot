@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { logAdminAction } from '@/lib/admin-logger';
 
 // POST /api/admin/products — Create a new product
 export async function POST(request: Request) {
@@ -28,6 +29,14 @@ export async function POST(request: Request) {
                 modifiers: modifiers ? JSON.stringify(modifiers) : null,
             },
             include: { category: true },
+        });
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'CREATE',
+            entity: 'PRODUCT',
+            entityId: product.id,
+            details: `Menambahkan produk baru: "${name}"`
         });
 
         return NextResponse.json(product, { status: 201 });

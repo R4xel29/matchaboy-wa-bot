@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { logAdminAction } from '@/lib/admin-logger';
 
 // PATCH /api/admin/products/[id] — Update product fields
 export async function PATCH(
@@ -17,6 +18,15 @@ export async function PATCH(
         const body = await request.json();
         const { name, description, price, categoryId, badge, image, modifiers } = body;
 
+        const existingProduct = await prisma.product.findUnique({
+            where: { id },
+            select: { name: true, badge: true }
+        });
+
+        if (!existingProduct) {
+            return new NextResponse('Product not found', { status: 404 });
+        }
+
         const data: Record<string, any> = {};
         if (name !== undefined) data.name = name;
         if (description !== undefined) data.description = description;
@@ -30,6 +40,36 @@ export async function PATCH(
             where: { id },
             data,
             include: { category: true },
+        });
+
+        let detailMessage = `Updated product manually: ${product.name}`;
+        
+        // Check if only the badge (availability) was updated
+        const isOnlyBadgeUpdate = badge !== undefined && name === undefined && price === undefined && description === undefined;
+        
+        if (isOnlyBadgeUpdate) {
+            const statusLabel = badge === 'sold-out' ? 'Habis (Sold Out)' : 'Tersedia (Available)';
+            detailMessage = `Memperbarui status produk "${product.name}" menjadi ${statusLabel}`;
+        } else {
+            // General update details
+            const changes = [];
+            if (name !== undefined && name !== existingProduct.name) changes.push('name');
+            if (price !== undefined) changes.push('price');
+            if (badge !== undefined && badge !== existingProduct.badge) changes.push('availability');
+            
+            if (changes.length > 0) {
+                detailMessage = `Mengedit produk "${product.name}" (Perubahan: ${changes.join(', ')})`;
+            } else {
+                detailMessage = `Mengedit produk "${product.name}"`;
+            }
+        }
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entity: 'PRODUCT',
+            entityId: id,
+            details: detailMessage
         });
 
         return NextResponse.json(product);
@@ -52,6 +92,14 @@ export async function DELETE(
         }
 
         await prisma.product.delete({ where: { id } });
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'DELETE',
+            entity: 'PRODUCT',
+            entityId: id,
+            details: `Menghapus produk secara permanen`
+        });
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {

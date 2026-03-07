@@ -12,10 +12,12 @@ import type { Product, Category } from '@/types';
 
 export default function StorefrontClient({ 
   categories, 
-  products 
+  products,
+  banners
 }: { 
   categories: Category[]; 
-  products: Product[] 
+  products: Product[];
+  banners: any[];
 }) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -38,7 +40,7 @@ export default function StorefrontClient({
   return (
     <>
       {/* Hero Section */}
-      <Hero />
+      <Hero banners={banners} />
 
       {/* Category Navigation (Sticky) */}
       <CategoryTabs
@@ -82,6 +84,8 @@ export default function StorefrontClient({
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
         onProductSelect={handleSearchSelect}
+        products={products}
+        categories={categories}
       />
     </>
   );

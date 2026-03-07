@@ -8,13 +8,14 @@ async function main() {
     console.log("Seeding database...")
 
     // Delete all data first
+    await prisma.cashierShift.deleteMany()
     await prisma.orderItem.deleteMany()
     await prisma.order.deleteMany()
     await prisma.product.deleteMany()
     await prisma.category.deleteMany()
     await prisma.user.deleteMany()
 
-    // 1. Create Default Users (Admin, Driver, Customer)
+    // 1. Create Default Users (Admin, Cashier, Customer)
     const password = await bcrypt.hash("password123", 10)
 
     await prisma.user.create({
@@ -28,10 +29,10 @@ async function main() {
 
     await prisma.user.create({
         data: {
-            name: "Driver Andi",
-            email: "driver@matchaboy.com",
+            name: "Kasir Matchaboy",
+            email: "cashier@matchaboy.com",
             password,
-            role: "DRIVER",
+            role: "CASHIER",
             phone: "081234567890"
         }
     })

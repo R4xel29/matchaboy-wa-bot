@@ -17,34 +17,38 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("CUSTOMER") // CUSTOMER, DRIVER, ADMIN
-  
-  accounts      Account[]
-  sessions      Session[]
-  
+  role          String    @default("CUSTOMER") // CUSTOMER, ADMIN, CASHIER
+
+  accounts Account[]
+  sessions Session[]
+
   // App Specific
   phone         String?
-  orders        Order[]       @relation("UserOrders")
-  driverOrders  Order[]       @relation("DriverOrders")
+  orders        Order[]        @relation("UserOrders")
+  cashierOrders Order[]        @relation("CashierOrders")
   locations     Location[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  favorites     Favorite[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+  cashierShifts CashierShift[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -84,12 +88,12 @@ model Location {
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  slug        String    @unique
-  name        String
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Product {
@@ -98,57 +102,137 @@ model Product {
   description String
   price       Int
   image       String?
-  badge       String?  // e.g., 'best-seller', 'new', 'sold-out'
-  modifiers   String?  // JSON: { iceLevel?: string[], sugarLevel?: string[], addOns?: {id,name,price}[] }
+  badge       String? // e.g., 'best-seller', 'new', 'sold-out'
+  modifiers   String? // JSON: { iceLevel?: string[], sugarLevel?: string[], addOns?: {id,name,price}[] }
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
-  
-  orderItems  OrderItem[]
-  
+
+  orderItems OrderItem[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Favorite  Favorite[]
+}
+
+model Order {
+  id String @id @default(cuid())
+
+  // Relations
+  userId    String?
+  user      User?   @relation("UserOrders", fields: [userId], references: [id])
+  cashierId String?
+  cashier   User?   @relation("CashierOrders", fields: [cashierId], references: [id])
+
+  // Order channel
+  orderType     String  @default("DELIVERY") // DELIVERY, PICKUP, DINE_IN
+
+  // Customer Info snapshot
+  customerName  String
+  customerPhone String
+  address       String  @default("")
+  distanceKm    Float?
+
+  // Dine-in specific
+  tableNumber   String?
+
+  // Notes
+  notes         String?
+
+  // Financials
+  subtotal    Int
+  deliveryFee Int      @default(0)
+  total       Int
+
+  paymentMethod String // CASH, QRIS, COD, MIDTRANS
+  status        String      @default("PENDING") // PENDING, PREPARING, READY, COMPLETED, ASSIGNED, TO_STORE, PICKED_UP, ON_DELIVERY, DELIVERED, CANCELLED
+  items         OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  qty       Int
+  price     Int // Price at the time of order
+  modifiers String? // Stored as JSON string or plain text for simple modifiers
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Favorite {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  cartJson String? // Optional: storing specific modifiers they liked
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String // 'order', 'promo', 'system'
+  title   String
+  message String
+  isRead  Boolean @default(false)
+  linkUrl String?
+
+  createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // e.g., "CREATE", "UPDATE", "DELETE", "LOGIN"
+  entity    String   // e.g., "PRODUCT", "CATEGORY", "USER", "ORDER", etc.
+  entityId  String?  // ID of the entity that was affected
+  details   String?  // JSON string or plain text describing the change
+  createdAt DateTime @default(now())
+}
+
+model HeroBanner {
+  id          String   @id @default(cuid())
+  image       String
+  alt         String
+  headline    String
+  subheadline String
+  isActive    Boolean  @default(true)
+  isCover     Boolean  @default(true)
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-model Order {
-  id            String        @id @default(cuid())
-  
-  // Relations
-  userId        String?
-  user          User?         @relation("UserOrders", fields: [userId], references: [id])
-  driverId      String?
-  driver        User?         @relation("DriverOrders", fields: [driverId], references: [id])
-  
-  // Customer Info snapshot
-  customerName  String
-  customerPhone String
-  address       String
-  distanceKm    Float?
-  
-  // Financials
-  subtotal      Int
-  deliveryFee   Int
-  total         Int
-  
-  paymentMethod String        // COD, MIDTRANS
-  status        String        @default("ASSIGNED") // ASSIGNED, TO_STORE, PICKED_UP, ON_DELIVERY, DELIVERED
-  items         OrderItem[]
-  
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
+model CashierShift {
+  id           String    @id @default(cuid())
+  cashierId    String
+  cashier      User      @relation(fields: [cashierId], references: [id])
 
-model OrderItem {
-  id            String   @id @default(cuid())
-  orderId       String
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  productId     String
-  product       Product  @relation(fields: [productId], references: [id])
-  
-  qty           Int
-  price         Int      // Price at the time of order
-  modifiers     String?  // Stored as JSON string or plain text for simple modifiers
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  openedAt     DateTime  @default(now())
+  closedAt     DateTime?
+  openingCash  Int       @default(0)
+  closingCash  Int?
+
+  totalOrders  Int       @default(0)
+  totalRevenue Int       @default(0)
+
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

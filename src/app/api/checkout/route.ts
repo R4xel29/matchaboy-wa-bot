@@ -16,44 +16,83 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Data pengiriman tidak lengkap' }, { status: 400 })
         }
 
-        // Server-side recalculation of totals to prevent client tampering
-        // In a real app, you would fetch `prisma.product.findUnique` for every item in cart to verify price.
-        // Assuming body calculations are correct for now to match UI logic.
+        // --- SECURE SERVER-SIDE PRICE CALCULATION ---
+        const productIds = body.items.map((item: any) => item.productId)
+        const dbProducts = await prisma.product.findMany({
+            where: { id: { in: productIds } }
+        })
 
-        const subtotal = body.items.reduce((acc: number, item: any) => acc + item.totalPrice, 0)
+        let secureSubtotal = 0
+        const orderItemsToCreate = []
+
+        for (const item of body.items) {
+            const dbProduct = dbProducts.find(p => p.id === item.productId)
+            if (!dbProduct) {
+                return NextResponse.json({ error: `Produk tidak ditemukan: ${item.name}` }, { status: 400 })
+            }
+
+            // Parse DB modifiers
+            let dbModifiers: any = {}
+            if (dbProduct.modifiers) {
+                try {
+                    dbModifiers = JSON.parse(dbProduct.modifiers)
+                } catch {
+                    // Ignore schema parse error
+                }
+            }
+
+            // Calculate Add-Ons total
+            let addOnsTotal = 0
+            if (item.addOnIds && Array.isArray(item.addOnIds) && dbModifiers.addOns) {
+                for (const addOnId of item.addOnIds) {
+                    const validAddOn = dbModifiers.addOns.find((a: any) => a.id === addOnId)
+                    if (validAddOn) {
+                        addOnsTotal += validAddOn.price
+                    }
+                }
+            }
+
+            // Secure item price calculation
+            const secureItemPrice = dbProduct.price + addOnsTotal
+            const secureItemTotal = secureItemPrice * item.quantity
+            secureSubtotal += secureItemTotal
+
+            orderItemsToCreate.push({
+                productId: dbProduct.id,
+                qty: item.quantity,
+                price: secureItemPrice, // Base + add-ons
+                modifiers: item.modsString || null
+            })
+        }
+
         const deliveryFee = body.deliveryFee || 0
-        const total = subtotal + deliveryFee
+        const secureTotal = secureSubtotal + deliveryFee
 
         // Format address into a single string
         const fullAddress = `${body.address.label} - ${body.address.detail}${body.notes ? ` (Catatan: ${body.notes})` : ''}`
 
-        // Create the order using a transaction
+        // Create the order
         const order = await prisma.order.create({
             data: {
-                userId: session?.user?.id || null, // Allow guest checkout if session doesn't exist? (Middleware protects this usually, but good to be safe)
+                userId: session?.user?.id || null,
                 customerName: body.name,
                 customerPhone: body.phone,
                 address: fullAddress,
                 distanceKm: body.address.distance || 0,
-                subtotal,
+                subtotal: secureSubtotal,
                 deliveryFee,
-                total,
+                total: secureTotal,
                 paymentMethod: body.paymentMethod.toUpperCase(),
                 status: body.paymentMethod === 'cod' ? 'ASSIGNED' : 'PENDING_PAYMENT',
                 items: {
-                    create: body.items.map((item: any) => ({
-                        productId: item.productId,
-                        qty: item.quantity,
-                        price: item.price, // base price
-                        modifiers: item.modsString || null
-                    }))
+                    create: orderItemsToCreate
                 }
             }
         })
 
         // If Midtrans, we would generate a Snap Token here in Phase 9.3
 
-        return NextResponse.json({ success: true, orderId: order.id })
+        return NextResponse.json({ success: true, orderId: order.id, total: secureTotal })
     } catch (error) {
         console.error('Checkout error:', error)
         return NextResponse.json({ error: 'Gagal membuat pesanan' }, { status: 500 })

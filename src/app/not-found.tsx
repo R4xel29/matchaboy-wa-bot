@@ -33,7 +33,7 @@ export default function NotFound() {
       </Link>
 
       <p className="text-[10px] text-muted-foreground mt-6">
-        mattchaboy — New Culture Matcha
+        Matchaboy — New Culture Matcha
       </p>
     </div>
   );

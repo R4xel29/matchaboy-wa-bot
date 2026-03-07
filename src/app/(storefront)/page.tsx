@@ -5,12 +5,16 @@ import { ADD_ONS } from "@/lib/constants"
 export const revalidate = 60 // Revalidate every 60 seconds
 
 export default async function StorefrontPage() {
-  const [categories, products] = await Promise.all([
+  const [categories, products, banners] = await Promise.all([
     prisma.category.findMany({
       orderBy: { createdAt: 'asc' }
     }),
     prisma.product.findMany({
       orderBy: { createdAt: 'desc' } // Newest first
+    }),
+    prisma.heroBanner.findMany({
+      where: { isActive: true },
+      orderBy: { order: 'asc' }
     })
   ])
 
@@ -51,7 +55,8 @@ export default async function StorefrontPage() {
   return (
     <StorefrontClient 
       categories={mappedCategories} 
-      products={mappedProducts} 
+      products={mappedProducts}
+      banners={banners}
     />
   )
 }

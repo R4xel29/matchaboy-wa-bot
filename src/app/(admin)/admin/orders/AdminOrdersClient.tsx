@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatRupiah } from '@/lib/utils';
-import { Search, MapPin, Package, Clock, ArrowUpRight } from 'lucide-react';
+import { Search, MapPin, Package, Clock, ArrowUpRight, ShoppingBag, Truck } from 'lucide-react';
 
 interface OrderItem { id: string; qty: number; price: number; product: { name: string; image: string | null; }; }
 interface OrderData {
   id: string; customerName: string; customerPhone: string; address: string;
-  paymentMethod: string; total: number; status: string; createdAt: string; items: OrderItem[];
+  orderType: string; paymentMethod: string; total: number; status: string; createdAt: string; items: OrderItem[];
 }
 interface Props { initialOrders: OrderData[]; }
 
@@ -16,12 +16,14 @@ export default function AdminOrdersClient({ initialOrders }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [typeFilter, setTypeFilter] = useState('ALL');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const filteredOrders = initialOrders.filter(o => {
     const matchesSearch = o.id.toLowerCase().includes(search.toLowerCase()) || o.customerName.toLowerCase().includes(search.toLowerCase()) || o.customerPhone.includes(search);
     const matchesStatus = statusFilter === 'ALL' || o.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesType = typeFilter === 'ALL' || o.orderType === typeFilter;
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   const nextStatusMap: Record<string, string> = {
@@ -69,6 +71,12 @@ export default function AdminOrdersClient({ initialOrders }: Props) {
           <option value="ON_DELIVERY">On Delivery</option>
           <option value="DELIVERED">Delivered</option>
         </select>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
+          className="px-3 py-2.5 text-sm bg-white border border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-matcha-500/20 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <option value="ALL">All Types</option>
+          <option value="DELIVERY">Delivery</option>
+          <option value="PICKUP">Pickup</option>
+        </select>
       </div>
 
       {/* Order Cards */}
@@ -90,6 +98,12 @@ export default function AdminOrdersClient({ initialOrders }: Props) {
                     </a>
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(order.status)}`}>
                       {order.status.replace('_', ' ')}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                      order.orderType === 'PICKUP' ? 'bg-purple-50 text-purple-700' :
+                      'bg-sky-50 text-sky-700'
+                    }`}>
+                      {order.orderType === 'PICKUP' ? 'Pickup' : 'Delivery'}
                     </span>
                   </div>
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">

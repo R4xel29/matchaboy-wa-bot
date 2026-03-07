@@ -6,7 +6,7 @@ import { authConfig } from '@/auth.config'
 // Initialize NextAuth with only the Edge-compatible configuration
 const { auth } = NextAuth(authConfig)
 
-const protectedRoutes = ['/profile', '/driver', '/admin']
+const protectedRoutes = ['/profile', '/admin']
 const authRoutes = ['/login', '/register']
 
 export default auth((req) => {
@@ -21,6 +21,9 @@ export default auth((req) => {
             if (role === 'ADMIN') {
                 return NextResponse.redirect(new URL('/admin', req.url))
             }
+            if (role === 'CASHIER') {
+                return NextResponse.redirect(new URL('/admin/cashier', req.url))
+            }
             return NextResponse.redirect(new URL('/profile', req.url))
         }
         return NextResponse.next()
@@ -34,13 +37,11 @@ export default auth((req) => {
             return NextResponse.redirect(loginUrl)
         }
 
-        // Role Based protection
-        if (pathname.startsWith('/driver') && role !== 'DRIVER' && role !== 'ADMIN') {
-            return NextResponse.redirect(new URL('/profile', req.url))
-        }
-
-        if (pathname.startsWith('/admin') && role !== 'ADMIN') {
-            return NextResponse.redirect(new URL('/profile', req.url))
+        // Admin routes: allow ADMIN and CASHIER roles
+        if (pathname.startsWith('/admin')) {
+            if (role !== 'ADMIN' && role !== 'CASHIER') {
+                return NextResponse.redirect(new URL('/profile', req.url))
+            }
         }
     }
 

@@ -1,14 +1,57 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import Google from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./lib/prisma"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { authConfig } from "./auth.config"
+
+const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig,
     adapter: PrismaAdapter(prisma),
     providers: [
+        Google({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+            allowDangerousEmailAccountLinking: true,
+        }),
+        CredentialsProvider({
+            id: 'impersonate',
+            name: "Impersonate",
+            credentials: {
+                userId: { type: "text" },
+                timestamp: { type: "text" },
+                signature: { type: "text" }
+            },
+            async authorize(credentials) {
+                if (!credentials?.userId || !credentials?.timestamp || !credentials?.signature) return null;
+                
+                const { userId, timestamp, signature } = credentials;
+                const secret = process.env.AUTH_SECRET;
+                if (!secret) return null;
+                
+                // Verify timestamp is within last 1 minute
+                const now = Date.now();
+                if (now - Number(timestamp) > 60000 || Number(timestamp) > now + 5000) return null;
+                
+                const expectedSig = crypto
+                   .createHmac('sha256', secret)
+                   .update(`${userId}:${timestamp}`)
+                   .digest('hex');
+                   
+                if (signature !== expectedSig) return null;
+                
+                const user = await prisma.user.findUnique({
+                    where: { id: userId as string }
+                });
+                
+                return user || null;
+            }
+        }),
         CredentialsProvider({
             name: "Credentials",
             credentials: {

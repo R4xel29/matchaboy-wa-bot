@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { logAdminAction } from '@/lib/admin-logger';
 
 // GET /api/admin/categories — List all categories
 export async function GET() {
@@ -44,6 +45,14 @@ export async function POST(request: Request) {
 
         const category = await prisma.category.create({
             data: { name, slug },
+        });
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'CREATE',
+            entity: 'CATEGORY',
+            entityId: category.id,
+            details: `Membuat kategori baru: "${name}"`
         });
 
         return NextResponse.json(category, { status: 201 });

@@ -14,6 +14,7 @@ import {
   Phone,
   MessageCircle,
   ChefHat,
+  ShoppingBag,
 } from 'lucide-react';
 import { useState } from 'react';
 import { formatRupiah } from '@/lib/utils';
@@ -25,14 +26,13 @@ export type TrackingOrderShape = {
   customerPhone: string;
   address: string;
   paymentMethod: string;
+  orderType: string;
   items: Array<{ name: string; qty: number; price: number; mods?: string }>;
   subtotal: number;
   deliveryFee: number;
   total: number;
   createdAt: string;
   estimatedArrival: string;
-  driverName: string;
-  driverPhone: string;
 };
 
 type OrderStep = {
@@ -44,13 +44,37 @@ type OrderStep = {
   completed: boolean;
 };
 
-const ORDER_STEPS: OrderStep[] = [
-  { key: 'confirmed', label: 'Pesanan Diterima', time: '14:32', icon: Check, active: false, completed: true },
-  { key: 'preparing', label: 'Sedang Disiapkan', time: '14:35', icon: ChefHat, active: false, completed: true },
-  { key: 'picked-up', label: 'Driver Menuju Toko', time: '14:42', icon: Store, active: false, completed: true },
-  { key: 'on-delivery', label: 'Dalam Pengiriman', time: '14:50', icon: Truck, active: true, completed: false },
-  { key: 'delivered', label: 'Tiba di Tujuan', icon: MapPin, active: false, completed: false },
-];
+function getOrderSteps(orderType: string): OrderStep[] {
+  if (orderType === 'PICKUP') {
+    return [
+      { key: 'pending', label: 'Pesanan Diterima', icon: Check, active: false, completed: true },
+      { key: 'preparing', label: 'Sedang Disiapkan', icon: ChefHat, active: true, completed: false },
+      { key: 'ready', label: 'Siap Diambil', icon: ShoppingBag, active: false, completed: false },
+      { key: 'completed', label: 'Selesai', icon: Check, active: false, completed: false },
+    ];
+  }
+  // DELIVERY
+  return [
+    { key: 'assigned', label: 'Pesanan Diterima', icon: Check, active: false, completed: true },
+    { key: 'preparing', label: 'Sedang Disiapkan', icon: ChefHat, active: false, completed: true },
+    { key: 'on_delivery', label: 'Dalam Pengiriman', icon: Truck, active: true, completed: false },
+    { key: 'delivered', label: 'Tiba di Tujuan', icon: MapPin, active: false, completed: false },
+  ];
+}
+
+function getOrderTypeLabel(type: string) {
+  switch (type) {
+    case 'PICKUP': return 'Ambil Sendiri';
+    default: return 'Pengiriman';
+  }
+}
+
+function getOrderTypeIcon(type: string) {
+  switch (type) {
+    case 'PICKUP': return ShoppingBag;
+    default: return Truck;
+  }
+}
 
 export default function OrderTrackingClient({ order }: { order: TrackingOrderShape }) {
   const router = useRouter();
@@ -62,6 +86,9 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const OrderTypeIcon = getOrderTypeIcon(order.orderType);
+  const steps = getOrderSteps(order.orderType);
 
   return (
     <div className="min-h-dvh bg-background pb-safe">
@@ -105,40 +132,23 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <Truck className="w-5 h-5" />
+              <OrderTypeIcon className="w-5 h-5" />
               <span className="text-sm font-bold uppercase">{order.status.replace('_', ' ')}</span>
             </div>
             <p className="text-matcha-200 text-xs">
-              Estimasi tiba: {order.estimatedArrival}
+              {getOrderTypeLabel(order.orderType)}
             </p>
 
-            {/* Driver info */}
+            {/* Order Type Badge */}
             <div className="flex items-center gap-3 mt-4 pt-3 border-t border-white/15">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <Truck className="w-5 h-5" />
+                <OrderTypeIcon className="w-5 h-5" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold">{order.driverName}</p>
-                <p className="text-xs text-matcha-200">Driver Mattchaboy</p>
-              </div>
-              <div className="flex gap-2">
-                <a
-                  href={`tel:${order.driverPhone}`}
-                  className="w-9 h-9 rounded-full bg-white/20 
-                    flex items-center justify-center touch-target
-                    hover:bg-white/30 transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                </a>
-                <a
-                  href={`https://wa.me/${order.driverPhone.replace(/\s/g, '')}`}
-                  target="_blank"
-                  className="w-9 h-9 rounded-full bg-white/20 
-                    flex items-center justify-center touch-target
-                    hover:bg-white/30 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </a>
+                <p className="text-sm font-semibold">{getOrderTypeLabel(order.orderType)}</p>
+                <p className="text-xs text-matcha-200">
+                  {order.orderType === 'DELIVERY' ? 'Diantar ke alamat Anda' : 'Ambil di toko'}
+                </p>
               </div>
             </div>
           </div>
@@ -148,7 +158,7 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
         <section>
           <h2 className="font-heading font-bold text-base mb-4">Status Pesanan</h2>
           <div className="space-y-0 pl-2">
-            {ORDER_STEPS.map((step, i) => (
+            {steps.map((step, i) => (
               <motion.div
                 key={step.key}
                 initial={{ opacity: 0, x: -10 }}
@@ -177,7 +187,7 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
                       }`}
                     />
                   </div>
-                  {i < ORDER_STEPS.length - 1 && (
+                  {i < steps.length - 1 && (
                     <div
                       className={`w-0.5 h-8 ${
                         step.completed ? 'bg-matcha-600' : 'bg-border'
@@ -230,10 +240,12 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatRupiah(order.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Ongkir</span>
-                <span>{formatRupiah(order.deliveryFee)}</span>
-              </div>
+              {order.orderType === 'DELIVERY' && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Ongkir</span>
+                  <span>{formatRupiah(order.deliveryFee)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border/30">
                 <span>Total</span>
                 <span className="text-matcha-700">{formatRupiah(order.total)}</span>
@@ -242,18 +254,20 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
           </div>
         </section>
 
-        {/* Delivery Address */}
-        <section className="rounded-2xl bg-card border border-border/50 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <MapPin className="w-4 h-4 text-matcha-600 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                Alamat Pengiriman
-              </p>
-              <p className="text-sm text-foreground">{order.address}</p>
+        {/* Delivery Address - only for delivery orders */}
+        {order.orderType === 'DELIVERY' && order.address && (
+          <section className="rounded-2xl bg-card border border-border/50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <MapPin className="w-4 h-4 text-matcha-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                  Alamat Pengiriman
+                </p>
+                <p className="text-sm text-foreground">{order.address}</p>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Contact Admin */}
         <button

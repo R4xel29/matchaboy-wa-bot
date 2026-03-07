@@ -228,7 +228,7 @@ export default function PaymentPage() {
             <button
               onClick={() => {
                 const message = encodeURIComponent(
-                  `Halo Mattchaboy! Saya mau tanya status pesanan ${orderId}.`
+                  `Halo Matchaboy! Saya mau tanya status pesanan ${orderId}.`
                 );
                 window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
               }}

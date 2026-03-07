@@ -51,8 +51,6 @@ export function ProductCard({ product, onAddClick, index }: ProductCardProps) {
           }}
         />
 
-        {/* Fallback gradient when image fails */}
-        <div className="absolute inset-0 bg-gradient-to-br from-matcha-200/60 via-matcha-300/40 to-matcha-100/50 -z-0" />
 
         {/* Badge */}
         {badge && (

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { logAdminAction } from '@/lib/admin-logger';
 
 // PATCH /api/admin/categories/[id] — Update a category
 export async function PATCH(
@@ -25,6 +26,14 @@ export async function PATCH(
         const category = await prisma.category.update({
             where: { id },
             data: { name, slug },
+        });
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'UPDATE',
+            entity: 'CATEGORY',
+            entityId: id,
+            details: `Mengedit nama kategori menjadi: "${name}"`
         });
 
         return NextResponse.json(category);
@@ -56,6 +65,15 @@ export async function DELETE(
         }
 
         await prisma.category.delete({ where: { id } });
+
+        await logAdminAction({
+            userId: session.user.id,
+            action: 'DELETE',
+            entity: 'CATEGORY',
+            entityId: id,
+            details: `Menghapus kategori secara permanen`
+        });
+
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.error('Error deleting category:', error);

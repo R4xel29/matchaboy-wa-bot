@@ -24,7 +24,7 @@ const SLIDES: HeroSlide[] = [
   {
     id: 2,
     image: '/hero/hero-2.jpg',
-    alt: 'Mattchaboy signature collection',
+    alt: 'Matchaboy signature collection',
     headline: 'New Culture\nMatcha',
     subheadline: 'Bold flavors for the new generation.',
   },
@@ -52,7 +52,8 @@ const slideVariants = {
   }),
 };
 
-export function Hero() {
+export function Hero({ banners = [] }: { banners?: any[] }) {
+  const slides = banners.length > 0 ? banners : SLIDES;
   const [[current, direction], setCurrent] = useState([0, 0]);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -61,8 +62,8 @@ export function Hero() {
       setCurrent(([prev]) => {
         const next =
           newDirection > 0
-            ? (prev + 1) % SLIDES.length
-            : (prev - 1 + SLIDES.length) % SLIDES.length;
+            ? (prev + 1) % slides.length
+            : (prev - 1 + slides.length) % slides.length;
         return [next, newDirection];
       });
     },
@@ -107,10 +108,10 @@ export function Hero() {
           {/* Background image placeholder */}
           <div className="absolute inset-0 bg-gradient-to-br from-matcha-800 via-matcha-700 to-matcha-600">
             <Image
-              src={SLIDES[current].image}
-              alt={SLIDES[current].alt}
+              src={slides[current].image}
+              alt={slides[current].alt}
               fill
-              className="object-cover"
+              className={`${slides[current].isCover === false ? 'object-contain' : 'object-cover'}`}
               priority={current === 0}
               sizes="100vw"
               onError={(e) => {
@@ -130,7 +131,7 @@ export function Hero() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-white whitespace-pre-line leading-[1.1] tracking-tight"
             >
-              {SLIDES[current].headline}
+              {slides[current].headline}
             </motion.h1>
             <motion.p
               initial={{ y: 20, opacity: 0 }}
@@ -138,7 +139,7 @@ export function Hero() {
               transition={{ delay: 0.35, duration: 0.5 }}
               className="mt-3 text-white/80 text-base md:text-lg max-w-md"
             >
-              {SLIDES[current].subheadline}
+              {slides[current].subheadline}
             </motion.p>
             <motion.button
               initial={{ y: 20, opacity: 0 }}
@@ -184,7 +185,7 @@ export function Hero() {
 
       {/* Dot indicators */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {SLIDES.map((slide, i) => (
+        {slides.map((slide: any, i: number) => (
           <button
             key={slide.id}
             onClick={() => {

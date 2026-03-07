@@ -65,11 +65,14 @@ export interface StoreLocation {
 
 // ── Order Types ─────────────────────────────────────────────
 
-export type PaymentMethod = 'midtrans' | 'cod';
+export type PaymentMethod = 'midtrans' | 'cod' | 'cash' | 'qris';
+export type OrderType = 'DELIVERY' | 'PICKUP' | 'DINE_IN';
 export type OrderStatus =
     | 'pending'
-    | 'confirmed'
     | 'preparing'
+    | 'ready'
+    | 'completed'
+    | 'assigned'
     | 'on-delivery'
     | 'delivered'
     | 'cancelled';
@@ -81,11 +84,13 @@ export interface Order {
     customerPhone: string;
     address: DeliveryAddress;
     paymentMethod: PaymentMethod;
+    orderType: OrderType;
     status: OrderStatus;
     subtotal: number;
     deliveryFee: number;
     total: number;
     createdAt: string;
+    tableNumber?: string;
+    notes?: string;
     snapToken?: string;
-    proofOfDelivery?: string;
 }

@@ -5,7 +5,8 @@ import { notFound, redirect } from "next/navigation"
 
 export const revalidate = 0 // always fetch fresh order data
 
-export default async function OrderTrackingPage({ params }: { params: { id: string } }) {
+export default async function OrderTrackingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth()
   
   if (!session?.user?.id) {
@@ -13,11 +14,11 @@ export default async function OrderTrackingPage({ params }: { params: { id: stri
   }
 
   const order = await prisma.order.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { items: { include: { product: true } } }
   })
 
-  // Security: only owner, driver, or admin can view this order
+  // Security: only owner, cashier, or admin can view this order
   if (!order) {
     notFound()
   }
@@ -49,8 +50,7 @@ export default async function OrderTrackingPage({ params }: { params: { id: stri
       hour: '2-digit', minute: '2-digit'
     }),
     estimatedArrival: 'TBD', // In real life, calculate based on pickup time + distance
-    driverName: order.driverId ? 'Tugas Driver' : 'Belum Ditugaskan',
-    driverPhone: '-',
+    orderType: (order as any).orderType || 'DELIVERY',
   }
 
   return <OrderTrackingClient order={mappedOrder as any} />
