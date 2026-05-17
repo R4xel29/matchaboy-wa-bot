@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -19,6 +19,18 @@ import { formatRupiah } from '@/lib/utils';
 type PaymentState = 'processing' | 'success' | 'pending' | 'error';
 
 export default function PaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-background flex flex-col items-center justify-center px-6">
+        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+      </div>
+    }>
+      <PaymentPageContent />
+    </Suspense>
+  );
+}
+
+function PaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const method = searchParams.get('method') ?? 'midtrans';
