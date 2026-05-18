@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, QrCode, Flashlight, ArrowLeft } from 'lucide-react';
+import { X, QrCode, Flashlight, ArrowLeft, Camera, CameraOff, FlipHorizontal2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface QROverlayProps {
   isOpen: boolean;
@@ -17,6 +18,14 @@ export function QROverlay({ isOpen, onClose }: QROverlayProps) {
   const [referralCode, setReferralCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  const router = useRouter();
+
+  // Scanner state
+  const scannerRef = useRef<HTMLDivElement>(null);
+  const html5QrCodeRef = useRef<any>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
   useEffect(() => {
     if (isOpen) {
@@ -68,8 +77,95 @@ export function QROverlay({ isOpen, onClose }: QROverlayProps) {
       } else {
         setDebugInfo('Status: Loading session...');
       }
+    } else {
+      // Stop camera if overlay closes
+      stopCamera();
+      setActiveTab('my-qr');
     }
   }, [isOpen, session, status]);
+
+  const stopCamera = async () => {
+    if (html5QrCodeRef.current) {
+      try { await html5QrCodeRef.current.stop(); } catch {}
+      html5QrCodeRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError('');
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      
+      if (html5QrCodeRef.current) {
+        try { await html5QrCodeRef.current.stop(); } catch {}
+      }
+
+      const scannerId = 'user-qr-scanner';
+      if (scannerRef.current) {
+        scannerRef.current.innerHTML = '';
+        const div = document.createElement('div');
+        div.id = scannerId;
+        scannerRef.current.appendChild(div);
+      }
+      
+      const html5QrCode = new Html5Qrcode(scannerId);
+      html5QrCodeRef.current = html5QrCode;
+
+      await html5QrCode.start(
+        { facingMode },
+        {
+          fps: 10,
+          qrbox: { width: 220, height: 220 },
+          aspectRatio: 1.0,
+        },
+        (decodedText: string) => {
+          // Auto stop on successful scan
+          html5QrCode.stop().catch(() => {});
+          html5QrCodeRef.current = null;
+          setCameraActive(false);
+          handleScanSuccess(decodedText);
+        },
+        () => {} // Ignore errors during scanning
+      );
+      
+      setCameraActive(true);
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      setCameraError(
+        err?.message?.includes('Permission')
+          ? 'Izin kamera ditolak. Silakan izinkan akses kamera di browser.'
+          : 'Kamera tidak tersedia saat ini.'
+      );
+    }
+  };
+
+  const flipCamera = async () => {
+    await stopCamera();
+    setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+    setTimeout(() => {
+      startCamera();
+    }, 100);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'scan' && isOpen) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => { stopCamera(); };
+  }, [activeTab, facingMode, isOpen]);
+
+  const handleScanSuccess = (decodedText: string) => {
+    onClose();
+    // Jika itu adalah URL, arahkan ke URL tersebut
+    if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+      window.location.href = decodedText;
+    } else {
+      alert(`Kode QR berhasil dipindai: ${decodedText}`);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -149,30 +245,65 @@ export function QROverlay({ isOpen, onClose }: QROverlayProps) {
                   exit={{ opacity: 0 }}
                   className="w-full flex flex-col items-center"
                 >
-                  <p className="text-white/80 text-sm text-center mb-12 px-8">
-                    Scan kode QR di meja (dine-in), QR di struk (join komunitas), ATAU QR di merchandise (koleksi merchandise)
+                  <p className="text-white/80 text-sm text-center mb-8 px-8">
+                    Scan kode QR di meja (dine-in), QR di struk (join komunitas), ATAU QR di merchandise
                   </p>
 
                   {/* Scanner Frame */}
-                  <div className="relative w-64 h-64 border-2 border-white/20 rounded-3xl">
-                    {/* Corner Borders */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-2xl -translate-x-1 -translate-y-1" />
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-2xl translate-x-1 -translate-y-1" />
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-2xl -translate-x-1 translate-y-1" />
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-2xl translate-x-1 translate-y-1" />
+                  <div className="relative w-72 h-72 rounded-3xl overflow-hidden bg-black flex items-center justify-center border-2 border-white/20">
+                    <div ref={scannerRef} className="w-full h-full [&_video]:!object-cover [&_video]:!rounded-3xl" />
                     
-                    {/* Animated Scanning Line */}
-                    <motion.div 
-                      className="absolute left-0 right-0 h-0.5 bg-brand-400 shadow-[0_0_15px_#34d399]"
-                      animate={{ top: ['0%', '100%', '0%'] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    />
+                    {cameraActive && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56">
+                          <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-2xl" />
+                          <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-2xl" />
+                          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-2xl" />
+                          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-2xl" />
+                          
+                          {/* Animated Scanning Line */}
+                          <motion.div 
+                            className="absolute left-2 right-2 h-0.5 bg-brand-400 shadow-[0_0_15px_#34d399]"
+                            animate={{ top: ['0%', '100%', '0%'] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                          />
+                        </div>
+                        {/* Dim overlay outside scan area */}
+                        <div className="absolute inset-0 bg-black/40" style={{ 
+                          clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, calc(50% - 112px) calc(50% - 112px), calc(50% - 112px) calc(50% + 112px), calc(50% + 112px) calc(50% + 112px), calc(50% + 112px) calc(50% - 112px), calc(50% - 112px) calc(50% - 112px))'
+                        }} />
+                      </div>
+                    )}
+
+                    {!cameraActive && !cameraError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                        <div className="text-center text-white">
+                          <Camera className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+                          <p className="text-sm">Membuka kamera...</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {cameraError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900 p-6">
+                        <div className="text-center text-white">
+                          <CameraOff className="w-8 h-8 mx-auto mb-2 text-red-400" />
+                          <p className="text-xs text-red-300">{cameraError}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Flashlight Toggle */}
-                  <button className="mt-12 w-16 h-16 rounded-full bg-white flex items-center justify-center text-black shadow-lg">
-                    <Flashlight className="w-8 h-8" />
-                  </button>
+                  {/* Camera Controls */}
+                  <div className="mt-8 flex gap-4">
+                    <button 
+                      onClick={flipCamera}
+                      className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-white backdrop-blur-md"
+                    >
+                      <FlipHorizontal2 className="w-6 h-6" />
+                    </button>
+                    {/* Placeholder for flashlight if supported, usually html5-qrcode doesn't easily support torch toggle without deeper API */}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -212,3 +343,4 @@ export function QROverlay({ isOpen, onClose }: QROverlayProps) {
     </AnimatePresence>
   );
 }
+

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { PermissionPrompt } from "@/components/ui/PermissionPrompt";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -51,7 +52,10 @@ export default function RootLayout({
         className={`${playfair.variable} ${dmSans.variable} antialiased`}
       >
         <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            {children}
+            <PermissionPrompt />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>
