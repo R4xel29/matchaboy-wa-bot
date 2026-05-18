@@ -289,7 +289,7 @@ export function LoadingScreen({ isSplash = false, onFinished, fullScreen = true 
 
         {/* Progress & Percentage for Splash */}
         {isSplash && (
-          <div className="w-48 flex flex-col gap-2 mt-1">
+          <div className="w-48 hidden md:flex flex-col gap-2 mt-1">
             <motion.div 
               className="text-2xl font-light tracking-widest font-mono text-[#EFDCA7]"
               initial={{ opacity: 0 }}
