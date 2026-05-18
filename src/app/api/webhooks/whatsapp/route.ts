@@ -276,9 +276,11 @@ export async function POST(req: Request) {
           
           const errorMessage = `Login Gagal! ❌\n\nNomor pengirim WhatsApp ini (*${standardizedPhone}*) tidak cocok dengan nomor yang Anda masukkan di aplikasi (*${standardizedTarget}*).\n\nSilakan gunakan akun WhatsApp yang sesuai dengan nomor tersebut untuk mengirim pesan.`;
           
-          try {
-            await sendWhatsAppMessage(standardizedPhone, errorMessage, jid);
-          } catch {}
+          if (!body.directReply) {
+            try {
+              await sendWhatsAppMessage(standardizedPhone, errorMessage, jid);
+            } catch {}
+          }
           return NextResponse.json({ success: false, error: "Phone number mismatch", replyMessage: errorMessage });
         }
       }
@@ -303,9 +305,11 @@ export async function POST(req: Request) {
       const replyMessage = `Login Berhasil Dikonfirmasi! ✅\n\nSilakan klik link berikut untuk kembali ke aplikasi dan masuk ke akun Anda:\n${magicLink}\n\n(Link berlaku selama 15 menit)`;
 
       // Kirim pesan ke WhatsApp user via API provider (asynchronous callback)
-      try {
-        await sendWhatsAppMessage(standardizedPhone, replyMessage, jid);
-      } catch {}
+      if (!body.directReply) {
+        try {
+          await sendWhatsAppMessage(standardizedPhone, replyMessage, jid);
+        } catch {}
+      }
 
       return NextResponse.json({ success: true, message: "Magic link sent", magicLink, replyMessage });
     }
