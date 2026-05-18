@@ -81,7 +81,7 @@ export function AppHeader({ onSearchClick }: AppHeaderProps) {
           >
             <Search
               className={`w-5 h-5 transition-colors duration-250 ${
-                scrolled ? 'text-brand-700' : 'text-white'
+                scrolled || pathname === '/' ? 'text-brand-700' : 'text-white'
               }`}
             />
           </button>
@@ -92,7 +92,7 @@ export function AppHeader({ onSearchClick }: AppHeaderProps) {
           >
             <User
               className={`w-5 h-5 transition-colors duration-250 ${
-                scrolled ? 'text-brand-700' : 'text-white'
+                scrolled || pathname === '/' ? 'text-brand-700' : 'text-white'
               }`}
             />
           </button>
