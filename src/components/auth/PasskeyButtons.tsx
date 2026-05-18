@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn } from "next-auth/react"
+import { signIn } from "next-auth/webauthn"
 import { Fingerprint, Loader2, X, AlertCircle, HelpCircle, ShieldAlert } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
