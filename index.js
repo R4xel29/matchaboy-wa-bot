@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // Configuration
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 // URL Webhook Next.js — gunakan URL Vercel production agar magic link selalu benar
 const NEXTJS_WEBHOOK_URL = 'https://arumseduh.vercel.app/api/webhooks/whatsapp';
 
