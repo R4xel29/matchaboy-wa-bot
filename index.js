@@ -19,6 +19,8 @@ const PORT = process.env.PORT || 3001;
 const NEXTJS_WEBHOOK_URL = 'https://arumseduh.vercel.app/api/webhooks/whatsapp';
 
 let sock;
+let latestQr = null;
+let isConnected = false;
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await usePostgresAuthState();
@@ -33,10 +35,12 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            console.log('\n[!] SCAN QR CODE INI DI APLIKASI WHATSAPP ANDA');
-            console.log('[!] QR Code juga disimpan ke file: qr.png');
+            latestQr = qr;
+            isConnected = false;
+            console.log('\n[!] SCAN QR CODE DI BROWSER: Buka https://[URL-RENDER-ANDA]/qr');
+            console.log('[!] QR Code juga tersedia via endpoint /qr');
             
-            // Simpan QR ke file gambar agar user mudah scan
+            // Simpan QR ke file gambar (backup lokal)
             try {
                 await QRCode.toFile(path.join(__dirname, 'qr.png'), qr);
             } catch (err) {
@@ -55,6 +59,14 @@ async function connectToWhatsApp() {
         } else if (connection === 'open') {
             console.log('\n✅ [BOT] Berhasil terhubung ke WhatsApp!');
             console.log(`[BOT] Terhubung sebagai: ${sock.user?.id || 'Unknown'} (${sock.user?.name || 'No Name'})\n`);
+            isConnected = true;
+            latestQr = null; // Hapus QR setelah terhubung
+            
+            // Hapus file qr.png jika ada setelah berhasil terhubung
+            const qrPath = path.join(__dirname, 'qr.png');
+            if (fs.existsSync(qrPath)) {
+                try { fs.unlinkSync(qrPath); } catch {}
+            }
         }
     });
 
@@ -154,11 +166,68 @@ async function connectToWhatsApp() {
 
 // Endpoint ping untuk UptimeRobot
 app.get('/ping', (req, res) => {
-    res.json({ status: 'alive', time: new Date() });
+    res.json({ status: 'alive', time: new Date(), connected: isConnected });
 });
 
 app.get('/', (req, res) => {
-    res.send('Matchaboy WA Bot is Running 🍵');
+    if (isConnected) {
+        res.send('✅ Matchaboy WA Bot is Running & Connected 🍵');
+    } else if (latestQr) {
+        res.redirect('/qr');
+    } else {
+        res.send('⏳ Matchaboy WA Bot is Starting... Please wait.');
+    }
+});
+
+// Endpoint QR Code — buka di browser HP/laptop untuk scan
+app.get('/qr', async (req, res) => {
+    if (isConnected) {
+        return res.send(`
+            <html><body style="display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:sans-serif;background:#0a0a0a;color:#22c55e;">
+                <div style="text-align:center;">
+                    <h1 style="font-size:3rem;">✅</h1>
+                    <h2>Bot Sudah Terhubung!</h2>
+                    <p style="color:#888;">WhatsApp bot sudah aktif dan berjalan. Tidak perlu scan lagi.</p>
+                </div>
+            </body></html>
+        `);
+    }
+    
+    if (!latestQr) {
+        return res.send(`
+            <html><body style="display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:sans-serif;background:#0a0a0a;color:#eab308;">
+                <div style="text-align:center;">
+                    <h1 style="font-size:3rem;">⏳</h1>
+                    <h2>Menunggu QR Code...</h2>
+                    <p style="color:#888;">QR Code belum tersedia. Refresh halaman ini dalam beberapa detik.</p>
+                    <script>setTimeout(() => location.reload(), 3000);</script>
+                </div>
+            </body></html>
+        `);
+    }
+    
+    try {
+        const qrImageDataUrl = await QRCode.toDataURL(latestQr, { width: 400, margin: 2 });
+        res.send(`
+            <html>
+            <head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Scan QR - Matchaboy Bot</title></head>
+            <body style="display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:sans-serif;background:#0a0a0a;color:white;margin:0;">
+                <div style="text-align:center;padding:20px;">
+                    <h2 style="color:#B48A5E;">🍵 Matchaboy WA Bot</h2>
+                    <p style="color:#aaa;font-size:14px;margin-bottom:20px;">Scan QR Code ini dengan WhatsApp di HP Anda</p>
+                    <div style="background:white;padding:16px;border-radius:20px;display:inline-block;box-shadow:0 0 40px rgba(180,138,94,0.3);">
+                        <img src="${qrImageDataUrl}" alt="QR Code" style="width:300px;height:300px;" />
+                    </div>
+                    <p style="color:#666;font-size:12px;margin-top:16px;">WhatsApp → Perangkat Tertaut → Tautkan Perangkat</p>
+                    <p style="color:#444;font-size:11px;">QR akan berubah setiap 20 detik. Halaman ini otomatis refresh.</p>
+                    <script>setTimeout(() => location.reload(), 15000);</script>
+                </div>
+            </body>
+            </html>
+        `);
+    } catch (err) {
+        res.status(500).send('Gagal generate QR: ' + err.message);
+    }
 });
 
 // Endpoint untuk mengirim pesan
