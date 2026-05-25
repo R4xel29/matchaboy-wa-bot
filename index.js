@@ -23,6 +23,16 @@ let latestQr = null;
 let isConnected = false;
 
 async function connectToWhatsApp() {
+    // Tutup sock lama dengan benar sebelum membuat koneksi baru
+    // Tanpa ini, sock lama tetap aktif → WhatsApp melihat 2 koneksi → status 440 (conflict) loop
+    if (sock) {
+        try {
+            sock.ev.removeAllListeners();
+            sock.ws?.terminate?.();
+        } catch {}
+        sock = null;
+    }
+
     const { state, saveCreds } = await usePostgresAuthState();
 
     sock = makeWASocket({
@@ -52,8 +62,14 @@ async function connectToWhatsApp() {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
             console.log('Koneksi terputus. Alasan:', lastDisconnect?.error?.message, '| Status:', statusCode);
-            
-            if (shouldReconnect) {
+
+            if (statusCode === 440) {
+                // 440 = Conflict: instance lain masih terhubung.
+                // Tunggu lebih lama agar koneksi lama benar-benar tertutup di sisi WA.
+                connectToWhatsApp._retryCount = 0;
+                console.log('[BOT] Konflik sesi (440). Menunggu 10 detik agar koneksi lama tertutup...');
+                setTimeout(() => connectToWhatsApp(), 10000);
+            } else if (shouldReconnect) {
                 // Exponential back-off: mulai 5 detik, maks 30 detik
                 const delay = Math.min((connectToWhatsApp._retryCount || 0) * 5000 + 5000, 30000);
                 connectToWhatsApp._retryCount = (connectToWhatsApp._retryCount || 0) + 1;

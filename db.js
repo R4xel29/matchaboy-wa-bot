@@ -12,9 +12,10 @@ if (!connectionString) {
 
 const pool = new Pool({
     connectionString,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false },
+    max: 3,                  // Bot tidak butuh banyak koneksi; cegah EMAXCONNSESSION Supabase
+    idleTimeoutMillis: 10000, // Tutup koneksi idle setelah 10 detik
+    connectionTimeoutMillis: 5000,
 });
 
 // Test koneksi saat startup agar error terdeteksi lebih awal
