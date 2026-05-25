@@ -49,18 +49,26 @@ async function connectToWhatsApp() {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Koneksi terputus. Alasan:', lastDisconnect.error?.message);
-            console.log('Mencoba menyambung kembali:', shouldReconnect);
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            console.log('Koneksi terputus. Alasan:', lastDisconnect?.error?.message, '| Status:', statusCode);
             
             if (shouldReconnect) {
-                connectToWhatsApp();
+                // Exponential back-off: mulai 5 detik, maks 30 detik
+                const delay = Math.min((connectToWhatsApp._retryCount || 0) * 5000 + 5000, 30000);
+                connectToWhatsApp._retryCount = (connectToWhatsApp._retryCount || 0) + 1;
+                console.log(`Menyiapkan koneksi ulang dalam ${delay / 1000} detik... (percobaan ke-${connectToWhatsApp._retryCount})`);
+                setTimeout(() => connectToWhatsApp(), delay);
+            } else {
+                console.log('[BOT] Bot ter-logout. Tidak akan mencoba reconnect otomatis.');
+                connectToWhatsApp._retryCount = 0;
             }
         } else if (connection === 'open') {
             console.log('\n✅ [BOT] Berhasil terhubung ke WhatsApp!');
             console.log(`[BOT] Terhubung sebagai: ${sock.user?.id || 'Unknown'} (${sock.user?.name || 'No Name'})\n`);
             isConnected = true;
-            latestQr = null; // Hapus QR setelah terhubung
+            latestQr = null;
+            connectToWhatsApp._retryCount = 0; // Reset retry counter setelah berhasil terhubung
             
             // Hapus file qr.png jika ada setelah berhasil terhubung
             const qrPath = path.join(__dirname, 'qr.png');
@@ -117,7 +125,8 @@ async function connectToWhatsApp() {
         if (isLoginRequest || isDeleteRequest) {
             // Tentukan URL Webhook secara dinamis berdasarkan domain asal pada pesan jika ada
             let webhookUrl = NEXTJS_WEBHOOK_URL;
-            const domainMatch = text.match(/Domain:\s*(https?:\/\/[^\s\.]+[\S]*)/i);
+            // Fix #3: regex sebelumnya punya karakter `\.` yang memblokir domain berisi titik (misal vercel.app)
+            const domainMatch = text.match(/Domain:\s*(https?:\/\/[^\s]+)/i);
             
             if (domainMatch) {
                 let domain = domainMatch[1].trim();
