@@ -143,22 +143,21 @@ async function connectToWhatsApp() {
 
             try {
                 // Panggil Webhook Next.js
-                // directReply: false → biarkan webhook mengirim balasan via WA_PROVIDER_URL (endpoint /send bot ini)
+                // directReply: true → webhook tidak panggil sendWhatsAppMessage,
+                // cukup return replyMessage di JSON, lalu bot kirim via sock.sendMessage()
                 const response = await axios.post(webhookUrl, {
                     phone: senderNumber,
                     text: text,
                     jid: senderJid,
-                    directReply: false
-                }, { timeout: 15000 }); // timeout 15 detik agar tidak hang
+                    directReply: true
+                }, { timeout: 15000 });
 
                 console.log('[-] Berhasil meneruskan ke Next.js Webhook. Response:', response.data?.message || 'OK');
 
-                // Fallback: jika webhook kembalikan replyMessage tapi belum sempat kirim (mis. network issue),
-                // kirim langsung via socket bot sebagai jaminan pesan tersampaikan
-                if (response.data && response.data.replyMessage && !response.data.sent) {
-                    console.log('[BOT] Mengirim fallback reply langsung via socket...');
+                // Webhook mengembalikan replyMessage → bot kirim langsung via socket
+                if (response.data && response.data.replyMessage) {
                     await sock.sendMessage(senderJid, { text: response.data.replyMessage });
-                    console.log('[BOT] Fallback reply terkirim.');
+                    console.log('[BOT] Pesan balasan berhasil dikirim ke user.');
                 }
             } catch (error) {
                 console.error('[!] Gagal memanggil Next.js Webhook:', error.message);
