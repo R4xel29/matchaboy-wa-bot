@@ -488,6 +488,10 @@ export default function VoucherAdminClient({
       newErrors.minPurchase = "Minimal total belanja tidak boleh bernilai negatif."
     }
 
+    if (type === 'DISCOUNT_PCT' && maxDiscount !== null && (isNaN(maxDiscount) || maxDiscount < 0)) {
+      newErrors.maxDiscount = "Batas diskon maksimal tidak boleh bernilai negatif."
+    }
+
     if (usageLimit === undefined || usageLimit === null || isNaN(usageLimit) || usageLimit < 0) {
       newErrors.usageLimit = "Kuota klaim tidak boleh bernilai negatif."
     }
@@ -519,7 +523,7 @@ export default function VoucherAdminClient({
       type,
       discountValue: Number(discountValue),
       minPurchase: Number(minPurchase),
-      maxDiscount: maxDiscount ? Number(maxDiscount) : null,
+      maxDiscount: (type === 'DISCOUNT_PCT' && maxDiscount !== null && maxDiscount > 0) ? Number(maxDiscount) : null,
       terms,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
       usageLimit: Number(usageLimit),
@@ -1295,7 +1299,7 @@ export default function VoucherAdminClient({
                   <h3 className="font-bold text-xs uppercase tracking-wider text-gray-400 border-b border-gray-50 pb-2">
                     Tipe Diskon & Nilai
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={`grid grid-cols-1 ${type === 'DISCOUNT_PCT' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1.5">Tipe Voucher *</label>
                       <select
@@ -1359,6 +1363,35 @@ export default function VoucherAdminClient({
                         </p>
                       )}
                     </div>
+                    {type === 'DISCOUNT_PCT' && (
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">Batas Diskon Maksimal (Rp)</label>
+                        <input
+                          type="number"
+                          id="maxDiscount"
+                          name="maxDiscount"
+                          min={0}
+                          value={maxDiscount !== null ? maxDiscount : ''}
+                          onChange={(e) => { 
+                            const val = e.target.value;
+                            setMaxDiscount(val === '' ? null : Number(val));
+                            clearError('maxDiscount');
+                          }}
+                          placeholder="Tanpa batas"
+                          className={`w-full px-4 py-3 rounded-2xl border text-xs focus:outline-none transition-all ${
+                            errors.maxDiscount 
+                              ? 'border-red-500 bg-red-50/10 focus:border-red-600 focus:ring-1 focus:ring-red-600' 
+                              : 'border-gray-250 focus:border-[#B48A5E]'
+                          }`}
+                        />
+                        {errors.maxDiscount && (
+                          <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium">
+                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                            {errors.maxDiscount}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
