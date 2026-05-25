@@ -187,22 +187,21 @@ export default function ProfileClient({
 
   return (
     <div className="min-h-dvh bg-[#FDFBF7] pb-safe font-sans">
-      {/* Header */}
       {/* Header with Background Pattern */}
-      <header className="relative pt-safe bg-[#F5F5F5] overflow-hidden min-h-[160px]">
+      <header className="relative pt-safe bg-gradient-to-b from-[#F5F1E9] via-[#FAF8F5] to-[#FDFBF7] overflow-hidden min-h-[160px]">
         {/* Decorative Patterns (Heart shapes or similar) */}
         <div className="absolute top-0 right-0 p-4 opacity-10">
-           <Heart className="w-24 h-24 rotate-12" />
+           <Heart className="w-24 h-24 rotate-12 text-[#B48A5E]" />
         </div>
         <div className="absolute -top-10 -left-10 opacity-5">
-           <div className="w-40 h-40 rounded-full border-[20px] border-black" />
+           <div className="w-40 h-40 rounded-full border-[20px] border-[#1E3F20]" />
         </div>
 
         <div className="max-w-4xl mx-auto px-4 relative z-10">
           <div className="flex items-center justify-between py-4">
             <button
               onClick={handleBack}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm hover:bg-gray-50 transition-all active:scale-95 touch-target"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 border border-gray-150 shadow-sm hover:bg-[#FFFBF7] transition-all active:scale-95 touch-target"
               aria-label="Back"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -211,7 +210,7 @@ export default function ProfileClient({
             {activeSection === 'menu' && (
               <button 
                 onClick={() => user.isGuest ? setIsLoginSheetOpen(true) : setIsEditingProfile(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-sm text-xs font-semibold text-gray-700 hover:bg-white transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-4 py-2 bg-white/90 border border-gray-150 backdrop-blur-sm rounded-full shadow-sm text-xs font-bold text-[#B48A5E] hover:bg-[#FFFBF7] transition-all active:scale-95"
               >
                 <span>{user.isGuest ? 'Masuk' : 'Edit Profil'}</span>
                 {user.isGuest ? <ChevronRight className="w-3.5 h-3.5" /> : <Settings className="w-3.5 h-3.5" />}
@@ -222,7 +221,7 @@ export default function ProfileClient({
               <motion.h1 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="font-serif text-xl font-medium tracking-wide text-gray-800"
+                className="font-serif text-xl font-bold tracking-wide text-gray-800"
               >
                 {getHeaderTitle()}
               </motion.h1>
@@ -239,43 +238,43 @@ export default function ProfileClient({
               exit={{ opacity: 0, y: 10 }}
               className="px-4 pb-4 max-w-4xl mx-auto relative z-20"
             >
-              <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-5 border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 border border-[#D4A574]/20 shadow-[0_12px_40px_rgba(180,138,94,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
                 {/* Left: User Info */}
                 <div className="flex items-center gap-4">
-                  <div className="relative w-14 h-14 shrink-0">
-                    <div className="absolute inset-0 rounded-full border-2 border-brand-100 p-0.5 shadow-sm">
-                      <div className="w-full h-full rounded-full bg-brand-50 flex items-center justify-center overflow-hidden">
-                        <User className="w-7 h-7 text-[#B48A5E]" />
+                  <div className="relative w-16 h-16 shrink-0">
+                    <div className="absolute inset-0 rounded-full border-2 border-[#D4A574] p-0.5 shadow-sm bg-gradient-to-br from-[#FFFBF7] to-[#FFF6EB]">
+                      <div className="w-full h-full rounded-full bg-[#1E3F20] flex items-center justify-center overflow-hidden shadow-inner">
+                        <User className="w-8 h-8 text-[#D4A574]" />
                       </div>
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-none">Hai,</p>
-                    <h2 className="text-base font-black text-gray-900 leading-none truncate max-w-[180px]">{user.name}</h2>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-none">Hai, Member Setia</p>
+                    <h2 className="text-lg font-black text-gray-900 leading-tight truncate max-w-[200px] font-serif">{user.name}</h2>
                   </div>
                 </div>
 
                 {/* Right: Metrics Grid */}
                 <div className="flex items-center gap-3 shrink-0">
                   {/* Level Badge */}
-                  <div className="flex-1 sm:flex-initial min-w-[100px] bg-gray-50/60 border border-gray-100/80 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0 border border-gray-50">
-                      <Heart className="w-4 h-4 text-gray-400" />
+                  <div className="flex-1 sm:flex-initial min-w-[100px] bg-[#FFFBF7] border border-[#D4A574]/25 shadow-sm rounded-2xl px-4 py-2.5 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#1E3F20] flex items-center justify-center shrink-0 shadow-sm">
+                      <Heart className="w-4 h-4 text-[#D4A574] fill-[#D4A574]/20" />
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none">Level</p>
-                      <p className="text-[11px] font-black text-gray-700 leading-none">Silver (0%)</p>
+                      <p className="text-xs font-black text-gray-800 leading-none">Silver (0%)</p>
                     </div>
                   </div>
 
                   {/* Points Badge */}
-                  <div className="flex-1 sm:flex-initial min-w-[115px] bg-amber-50/20 border border-amber-100/30 rounded-2xl px-3.5 py-2.5 flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-amber-50 shadow-sm flex items-center justify-center shrink-0 border border-amber-100/50">
-                      <Coins className="w-4 h-4 text-amber-500" />
+                  <div className="flex-1 sm:flex-initial min-w-[115px] bg-[#FFFBF7] border border-[#D4A574]/25 shadow-sm rounded-2xl px-4 py-2.5 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#B48A5E] flex items-center justify-center shrink-0 shadow-sm">
+                      <Coins className="w-4 h-4 text-white" />
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-[9px] text-amber-600/80 font-bold uppercase tracking-wider leading-none">Arus Poin</p>
-                      <p className="text-[11px] font-black text-gray-800 leading-none">
+                      <p className="text-[9px] text-[#B48A5E]/80 font-bold uppercase tracking-wider leading-none">Arus Poin</p>
+                      <p className="text-xs font-black text-gray-850 leading-none">
                         {user.isGuest ? '-' : user.points} <span className="text-[8px] text-gray-400 font-bold">pts</span>
                       </p>
                     </div>
@@ -298,41 +297,41 @@ export default function ProfileClient({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-2">
+              <div className="bg-white/80 backdrop-blur-md rounded-[32px] border border-[#D4A574]/15 shadow-sm overflow-hidden p-3 space-y-1">
                 {menuItems.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => {
                       router.push(`/profile?section=${item.id}`);
                     }}
-                    className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 rounded-2xl transition-all active:scale-[0.98] group"
+                    className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-[#B48A5E]/5 rounded-2xl transition-all active:scale-[0.99] group"
                   >
-                    <div className="w-10 h-10 rounded-2xl bg-[#FDFBF7] flex items-center justify-center border border-gray-100 group-hover:bg-white group-hover:shadow-sm transition-all">
-                      <item.icon className="w-5 h-5 text-[#B48A5E]" />
+                    <div className="w-10 h-10 rounded-2xl bg-[#FFFBF7] flex items-center justify-center border border-[#D4A574]/20 group-hover:bg-gradient-to-br group-hover:from-[#B48A5E] group-hover:to-[#946F48] group-hover:text-white transition-all text-[#B48A5E] shadow-sm shrink-0">
+                      <item.icon className="w-5 h-5 transition-colors" />
                     </div>
-                    <span className="flex-1 text-[15px] font-medium text-gray-800 text-left">
+                    <span className="flex-1 text-[15px] font-bold text-gray-800 text-left group-hover:text-[#946F48] transition-colors">
                       {item.label}
                     </span>
                     {item.badge && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#B48A5E]/10 text-[#B48A5E] text-xs font-bold">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#B48A5E]/10 text-[#B48A5E] text-xs font-black">
                         {item.badge}
                       </span>
                     )}
-                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-400 transition-colors" />
+                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#B48A5E] group-hover:translate-x-1 transition-all shrink-0" />
                   </button>
                 ))}
               </div>
 
               {/* Keamanan Biometrik (Main Profile) */}
               {!user.isGuest && (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-[#FDFBF7] rounded-xl shadow-sm flex items-center justify-center border border-gray-100">
-                      <Fingerprint className="w-5 h-5 text-[#B48A5E]" />
+                <div className="bg-white/80 backdrop-blur-md rounded-[32px] border border-[#D4A574]/15 shadow-sm overflow-hidden p-5">
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <div className="w-11 h-11 bg-[#B48A5E]/5 rounded-2xl shadow-sm flex items-center justify-center border border-[#B48A5E]/15 text-[#B48A5E]">
+                      <Fingerprint className="w-5.5 h-5.5" />
                     </div>
                     <div>
-                      <h4 className="text-[15px] font-bold text-gray-800">Login Sidik Jari</h4>
-                      <p className="text-xs text-gray-500">Aktifkan untuk keamanan tambahan</p>
+                      <h4 className="text-[15px] font-black text-gray-800">Login Sidik Jari</h4>
+                      <p className="text-xs text-gray-500 font-medium">Aktifkan untuk keamanan tambahan</p>
                     </div>
                   </div>
                   <RegisterPasskeyButton />
@@ -348,7 +347,7 @@ export default function ProfileClient({
                      router.push('/');
                      router.refresh();
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-red-50 bg-white text-[15px] font-bold text-red-500 hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98]">
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-red-200 bg-red-50/20 text-[15px] font-black text-red-500 hover:bg-red-50 hover:border-red-300 transition-all active:scale-[0.98] shadow-sm">
                   <LogOut className="w-5 h-5" />
                   Keluar
                 </button>
@@ -524,7 +523,7 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
             <input 
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3.5 bg-[#F9F9F9] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900"
+              className="w-full px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-2 focus:ring-[#B48A5E]/10 transition-all outline-none text-[15px] font-semibold text-gray-900 shadow-inner"
               placeholder="Masukkan nama lengkap"
             />
           </div>
@@ -532,9 +531,9 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
           {/* Google Connection Section */}
           <div className="space-y-3">
             <label className="text-[11px] uppercase tracking-wider font-bold text-gray-400">Akun Terhubung</label>
-            <div className="flex items-center justify-between p-4 bg-[#F9F9F9] rounded-2xl border border-gray-100">
+            <div className="flex items-center justify-between p-4 bg-[#FFFBF5] rounded-2xl border border-[#D4A574]/20">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center border border-[#D4A574]/15">
                   <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -544,20 +543,20 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-gray-900">Google</h4>
-                  <p className="text-[11px] text-gray-500">{user.isGoogleConnected ? 'Terhubung' : 'Belum terhubung'}</p>
+                  <p className="text-[11px] text-gray-500 font-medium">{user.isGoogleConnected ? 'Terhubung' : 'Belum terhubung'}</p>
                 </div>
               </div>
               {user.isGoogleConnected ? (
                 <button 
                   onClick={() => setShowGoogleConfirm(true)}
-                  className="px-4 py-2 bg-white border border-red-100 text-red-500 rounded-xl text-[12px] font-bold hover:bg-red-50 transition-colors"
+                  className="px-4 py-2 bg-white border border-red-100 text-red-500 rounded-xl text-[12px] font-bold hover:bg-red-55 transition-colors"
                 >
                   Putuskan
                 </button>
               ) : (
                 <button 
                   onClick={() => signIn('google', { callbackUrl: '/profile' })}
-                  className="px-4 py-2 bg-brand-600 text-white rounded-xl text-[12px] font-bold shadow-md shadow-brand-100 hover:bg-brand-700 transition-all active:scale-95"
+                  className="px-4 py-2 bg-[#B48A5E] text-white rounded-xl text-[12px] font-bold shadow-md shadow-[#B48A5E]/10 hover:bg-[#946F48] transition-all active:scale-95"
                 >
                   Hubungkan
                 </button>
@@ -572,10 +571,10 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
               <input 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3.5 bg-[#F9F9F9] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900"
+                className="w-full px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-2 focus:ring-[#B48A5E]/10 transition-all outline-none text-[15px] font-semibold text-gray-900 shadow-inner"
                 placeholder="alamat email"
               />
-              <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-brand-400" />
+              <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-focus-within:text-[#B48A5E]" />
             </div>
           </div>
 
@@ -590,17 +589,17 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
                 <input 
                   value={phone}
                   readOnly
-                  className="w-full pl-14 pr-4 py-3.5 bg-[#F9F9F9] border border-transparent rounded-2xl text-[15px] font-medium text-gray-500 cursor-not-allowed"
+                  className="w-full pl-14 pr-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/15 rounded-2xl text-[15px] font-semibold text-gray-500 cursor-not-allowed shadow-inner"
                 />
               </div>
-              <button className="px-5 py-3 border border-brand-600 text-brand-600 rounded-2xl text-sm font-bold hover:bg-brand-50 transition-colors">
+              <button className="px-5 py-3 border border-[#B48A5E] text-[#B48A5E] rounded-2xl text-sm font-bold hover:bg-[#B48A5E]/5 transition-colors">
                 Ganti
               </button>
             </div>
           </div>
 
           {/* PIN Link */}
-          <button className="flex items-center gap-2 text-brand-600 font-bold text-[13px] hover:opacity-80 transition-opacity px-1">
+          <button className="flex items-center gap-2 text-[#B48A5E] font-black text-[13px] hover:opacity-80 transition-opacity px-1">
             <Shield className="w-4 h-4" />
             Ganti PIN
           </button>
@@ -619,8 +618,8 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
                   onClick={() => setGender(opt.id)}
                   className={`py-3.5 rounded-2xl text-sm font-bold transition-all ${
                     gender === opt.id 
-                      ? 'bg-brand-600 text-white shadow-lg shadow-brand-200' 
-                      : 'bg-[#F9F9F9] text-gray-500 hover:bg-gray-100'
+                      ? 'bg-[#B48A5E] text-white shadow-lg shadow-[#B48A5E]/20' 
+                      : 'bg-[#FFFBF5] text-gray-500 hover:bg-gray-100 border border-[#D4A574]/15'
                   }`}
                 >
                   {opt.label}
@@ -630,14 +629,14 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
           </div>
 
           {/* Birthday Banner */}
-          <div className="bg-[#FFF9EE] rounded-2xl p-4 border border-brand-100/30 flex items-start gap-3 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-brand-200/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="p-2.5 bg-white rounded-xl shadow-sm relative z-10">
-               <Cake className="w-5 h-5 text-brand-500" />
+          <div className="bg-[#FFFBF5] rounded-2xl p-4 border border-[#D4A574]/20 flex items-start gap-3 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-[#D4A574]/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="p-2.5 bg-white rounded-xl shadow-sm relative z-10 border border-[#D4A574]/15">
+               <Cake className="w-5 h-5 text-[#B48A5E]" />
             </div>
             <div className="flex-1 relative z-10">
-              <h4 className="text-sm font-bold text-gray-900 leading-tight">Dirayain loh ultahnya</h4>
-              <p className="text-[11px] text-brand-700/80 mt-1 font-medium leading-relaxed">Masukin tanggal ultah buat dirayain ultahnya.</p>
+               <h4 className="text-sm font-bold text-gray-900 leading-tight">Ulang Tahun Anda</h4>
+               <p className="text-[11px] text-[#B48A5E] mt-1 font-semibold leading-relaxed">Masukkan tanggal lahir Anda untuk mendapatkan kejutan spesial di hari ulang tahun Anda!</p>
             </div>
             <button className="absolute top-3 right-3 p-1 text-gray-300 hover:text-gray-500 transition-colors z-20">
                <X className="w-4 h-4" />
@@ -651,9 +650,9 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
-              className="w-full px-4 py-3.5 bg-[#F9F9F9] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900"
+              className="w-full px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-2 focus:ring-[#B48A5E]/10 transition-all outline-none text-[15px] font-semibold text-gray-900 shadow-inner"
             />
-            <p className="text-[10px] text-gray-400 font-medium px-1">Buat dirayain ulang tahunnya</p>
+            <p className="text-[10px] text-gray-400 font-semibold px-1">Tahun lahir opsional</p>
           </div>
 
           {/* Action Hapus Akun */}
@@ -661,7 +660,7 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
             <button 
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full py-4 border-2 border-red-100 hover:border-red-200 hover:bg-red-50 text-red-500 rounded-2xl text-[14px] font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full py-4 border border-red-100 hover:border-red-200 hover:bg-red-50/30 text-red-500 rounded-2xl text-[14px] font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               <Trash2 className="w-5 h-5 text-red-500" />
               Hapus Akun Saya
@@ -675,7 +674,7 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
             <button 
               disabled={saving}
               onClick={handleSave}
-              className="w-full py-4.5 bg-brand-600 text-white rounded-2xl text-[17px] font-bold shadow-xl shadow-brand-200/50 hover:bg-brand-700 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+              className="w-full py-4.5 bg-[#B48A5E] text-white rounded-2xl text-[17px] font-bold shadow-xl shadow-[#B48A5E]/20 hover:bg-[#946F48] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
             >
               {saving && <Loader2 className="w-5 h-5 animate-spin" />}
               Simpan Profil
@@ -820,13 +819,13 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
                 transition={{ type: 'spring', duration: 0.4 }}
                 className="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-xl border border-gray-100"
               >
-                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-600 animate-pulse">
+                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#B48A5E] animate-pulse">
                   <Smartphone className="w-8 h-8" />
                 </div>
 
                 <h3 className="font-serif text-lg font-bold text-gray-900 mb-2">Konfirmasi WhatsApp</h3>
                 <p className="text-xs text-gray-500 leading-relaxed mb-4">
-                  Silakan klik tombol di bawah untuk diarahkan langsung ke WhatsApp dan mengirim pesan konfirmasi penghapusan akun tanpa perlu copy-paste:
+                  Silakan klik tombol di bawah untuk diarahkan langsung ke WhatsApp dan mengirim pesan konfirmasi penghapusan akun:
                 </p>
 
                 <a
@@ -841,14 +840,14 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
                   Buka WhatsApp & Kirim
                 </a>
 
-                <div className="bg-[#FFF9EE] rounded-2xl p-3 border border-brand-100/50 mb-6 flex flex-col items-center justify-center gap-1 hover:bg-brand-50/10 transition-all select-all">
-                  <p className="text-[9px] text-brand-600 font-bold uppercase tracking-wider">Format Pesan Manual</p>
-                  <p className="text-base font-mono font-black text-brand-800 tracking-wider">HAPUS-{deleteCode}</p>
+                <div className="bg-[#FFFBF5] rounded-2xl p-3 border border-[#D4A574]/25 mb-6 flex flex-col items-center justify-center gap-1 hover:bg-[#B48A5E]/5 transition-all select-all">
+                  <p className="text-[9px] text-[#B48A5E] font-bold uppercase tracking-wider">Format Pesan Manual</p>
+                  <p className="text-base font-mono font-black text-[#946F48] tracking-wider">HAPUS-{deleteCode}</p>
                 </div>
 
                 <div className="flex flex-col gap-2.5">
                   <div className="flex items-center justify-center gap-2 text-xs text-gray-400 font-medium">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#B48A5E]" />
                     <span>Menunggu konfirmasi Anda di WhatsApp...</span>
                   </div>
                   <button
@@ -874,24 +873,55 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
 }
 
 function OrdersSection({ orders, router }: { orders: OrderShape[], router: any }) {
+  const getStatusBadgeClass = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('complete') || s.includes('selesai')) {
+      return 'bg-emerald-50 border-emerald-150 text-emerald-700';
+    }
+    if (s.includes('cancel') || s.includes('batal')) {
+      return 'bg-red-50 border-red-150 text-red-700';
+    }
+    if (s.includes('payment') || s.includes('bayar')) {
+      return 'bg-amber-50 border-amber-150 text-amber-700 animate-pulse';
+    }
+    if (s.includes('prepare') || s.includes('masak') || s.includes('proses')) {
+      return 'bg-blue-50 border-blue-150 text-blue-700';
+    }
+    if (s.includes('deliver') || s.includes('kirim')) {
+      return 'bg-indigo-50 border-indigo-150 text-indigo-700';
+    }
+    return 'bg-orange-50 border-orange-150 text-orange-700';
+  };
+
+  const getStatusLabel = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('complete') || s.includes('selesai')) return 'Selesai';
+    if (s.includes('cancel') || s.includes('batal')) return 'Dibatalkan';
+    if (s.includes('payment') || s.includes('bayar')) return 'Menunggu Pembayaran';
+    if (s.includes('pending')) return 'Menunggu Konfirmasi';
+    if (s.includes('prepare') || s.includes('proses')) return 'Sedang Disiapkan';
+    if (s.includes('deliver') || s.includes('kirim')) return 'Dalam Pengiriman';
+    return status;
+  };
+
   return (
     <motion.section
       key="orders"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="space-y-3"
+      className="space-y-3.5"
     >
       {orders.length === 0 ? (
-        <div className="text-center py-12 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Coffee className="w-8 h-8 text-gray-300" />
+        <div className="text-center py-16 px-6 bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm">
+          <div className="w-16 h-16 bg-[#FFFBF5] border border-[#D4A574]/15 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Coffee className="w-8 h-8 text-[#B48A5E]" />
           </div>
-          <h3 className="font-serif text-lg text-gray-800 mb-1">Belum Ada Pesanan</h3>
-          <p className="text-sm text-gray-500 mb-6">Nikmati berbagai pilihan matcha terbaik kami.</p>
+          <h3 className="font-serif text-lg text-gray-800 mb-1 font-bold">Belum Ada Pesanan</h3>
+          <p className="text-sm text-gray-500 mb-6 font-medium">Nikmati berbagai pilihan matcha terbaik kami.</p>
           <button 
             onClick={() => router.push('/')}
-            className="px-6 py-3 bg-[#B48A5E] text-white rounded-full text-sm font-medium hover:bg-[#946F48] transition-colors"
+            className="px-6 py-3 bg-[#B48A5E] text-white rounded-full text-sm font-black hover:bg-[#946F48] transition-all shadow-md shadow-[#B48A5E]/10"
           >
             Pesan Sekarang
           </button>
@@ -904,30 +934,27 @@ function OrdersSection({ orders, router }: { orders: OrderShape[], router: any }
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
             onClick={() => router.push(`/orders/${order.id}`)}
-            className="w-full text-left p-4 rounded-3xl bg-white border border-gray-100 shadow-sm hover:border-[#B48A5E]/30 hover:shadow-md transition-all active:scale-[0.98] group"
+            className="w-full text-left p-5 rounded-3xl bg-white border border-[#D4A574]/15 shadow-sm hover:border-[#B48A5E]/30 hover:shadow-md transition-all active:scale-[0.98] group flex flex-col justify-between"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                  <Package className="w-4 h-4 text-gray-500" />
+            <div className="flex items-start justify-between mb-3 w-full">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-[#FFFBF5] border border-[#D4A574]/15 flex items-center justify-center">
+                  <Package className="w-4.5 h-4.5 text-[#B48A5E]" />
                 </div>
                 <div>
-                  <p className="font-mono text-xs font-bold text-gray-900 leading-none">{order.id.slice(0,8).toUpperCase()}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">{order.date}</p>
+                  <p className="font-mono text-xs font-black text-gray-900 leading-none">{order.id.slice(0,8).toUpperCase()}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 font-medium">{order.date}</p>
                 </div>
               </div>
-              <span className={`px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider
-                ${order.status === 'completed' || order.status === 'selesai' ? 'bg-green-50 border-green-200 text-green-700' : 
-                  order.status === 'cancelled' || order.status === 'dibatalkan' ? 'bg-red-50 border-red-200 text-red-700' : 
-                  'bg-amber-50 border-amber-200 text-amber-700'}`}>
-                {order.status}
+              <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider shadow-sm ${getStatusBadgeClass(order.status)}`}>
+                {getStatusLabel(order.status)}
               </span>
             </div>
-            <div className="pl-10">
-              <p className="text-sm text-gray-600 line-clamp-1 mb-2 font-medium">{order.items}</p>
+            <div className="pl-12 w-full">
+              <p className="text-sm text-gray-600 line-clamp-1 mb-2.5 font-bold">{order.items}</p>
               <div className="flex items-center gap-x-2">
-                <span className="text-[11px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">Total</span>
-                <p className="text-[15px] font-bold text-[#B48A5E]">{formatRupiah(order.total)}</p>
+                <span className="text-[11px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full font-bold">Total</span>
+                <p className="text-[16px] font-black text-[#B48A5E]">{formatRupiah(order.total)}</p>
               </div>
             </div>
           </motion.button>
@@ -1517,7 +1544,7 @@ function AddressesSection({ user }: { user: UserShape }) {
                   placeholder="Cari alamat"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full pl-12 pr-10 py-3.5 bg-[#F4F4F4] rounded-full text-[15px] outline-none font-medium focus:bg-[#EFEFEF] transition-all border border-transparent shadow-inner"
+                  className="w-full pl-12 pr-10 py-3.5 bg-[#FFFBF5] rounded-full border border-[#D4A574]/25 shadow-inner text-[15px] outline-none font-semibold focus:bg-white focus:border-[#B48A5E]/60 transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -1540,7 +1567,7 @@ function AddressesSection({ user }: { user: UserShape }) {
                     setSearchResults([]);
                     setShowSearchResults(false);
                   }}
-                  className="text-[15px] font-semibold text-[#0066FF] hover:text-[#0055DD] transition-colors shrink-0"
+                  className="text-[15px] font-bold text-[#B48A5E] hover:text-[#946F48] transition-colors shrink-0"
                 >
                   Batal
                 </button>
@@ -1551,15 +1578,15 @@ function AddressesSection({ user }: { user: UserShape }) {
             <div className="flex gap-2">
               <button
                 onClick={handleDetectGPS}
-                className="flex-1 flex items-center justify-between p-4.5 rounded-2xl border-2 border-[#D4B28C] bg-white transition-all active:scale-[0.98] group"
+                className="flex-1 flex items-center justify-between p-4.5 rounded-2xl border border-[#D4A574] bg-[#FFFBF5]/45 hover:bg-[#FFFBF5]/90 transition-all active:scale-[0.98] group shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/30" />
+                  <div className="w-7 h-7 rounded-xl bg-emerald-50 border border-emerald-250 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-emerald-600 fill-emerald-600/10" />
                   </div>
-                  <span className="text-[15px] font-bold text-gray-800">Gunakan lokasi saat ini</span>
+                  <span className="text-[14px] font-black text-gray-800">Gunakan lokasi saat ini (GPS)</span>
                 </div>
-                <Map className="w-5 h-5 text-gray-800" />
+                <Map className="w-5 h-5 text-gray-500 group-hover:text-[#B48A5E] transition-colors" />
               </button>
             </div>
 
@@ -1579,7 +1606,7 @@ function AddressesSection({ user }: { user: UserShape }) {
                         onClick={() => handleSelectSearchResult(r)}
                         className="w-full flex items-start gap-4 py-4.5 text-left border-b border-gray-100 hover:bg-gray-50/50 transition-colors group"
                       >
-                        <div className="w-10 h-10 rounded-full bg-[#F4F4F4] flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-[#FFFBF5] flex items-center justify-center shrink-0 border border-[#D4A574]/10">
                           <MapPin className="w-5 h-5 text-gray-400 fill-gray-100" />
                         </div>
                         <div className="flex-1 min-w-0 pr-2">
@@ -1607,67 +1634,67 @@ function AddressesSection({ user }: { user: UserShape }) {
                 ) : (
                   <div className="text-center py-16 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm mt-4">
                     <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="font-serif text-lg text-gray-800 mb-1">Tidak Ditemukan</h3>
+                    <h3 className="font-serif text-lg text-gray-800 mb-1 font-bold">Tidak Ditemukan</h3>
                     <p className="text-sm text-gray-500">Coba kata kunci pencarian yang lain.</p>
                   </div>
                 )}
               </div>
             ) : (
               /* Saved addresses list */
-              <div className="space-y-3 mt-4">
+              <div className="space-y-3.5 mt-4">
                 {addresses.map((addr) => (
                   <button
                     key={addr.id}
                     onClick={() => handleEditAddress(addr)}
-                    className={`w-full flex items-start gap-3.5 p-4 rounded-3xl bg-white border text-left shadow-sm hover:border-[#B48A5E]/30 hover:shadow-md transition-all group ${
+                    className={`w-full flex items-start gap-4 p-5 rounded-[24px] bg-white border text-left shadow-sm hover:border-[#B48A5E]/40 hover:shadow-md transition-all group ${
                       addr.isDefault ? 'border-[#B48A5E]/40 ring-1 ring-[#B48A5E]/10' : 'border-gray-100'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-                      <MapPin className="w-5 h-5 text-gray-400 fill-gray-100" />
+                    <div className="w-10 h-10 rounded-2xl bg-[#FFFBF5] border border-[#D4A574]/15 flex items-center justify-center shrink-0 text-[#B48A5E]">
+                      <MapPin className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-[15px] font-bold text-gray-900 leading-tight">
+                        <h4 className="text-[15px] font-black text-gray-900 leading-tight">
                           {addr.name || addr.address.split(',')[0]}
                         </h4>
                         {addr.isDefault && (
-                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#B48A5E] bg-[#B48A5E]/10 px-2 py-0.5 rounded-full shrink-0">
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-white bg-gradient-to-r from-[#B48A5E] to-[#D4A574] px-2.5 py-0.5 rounded-full shrink-0 shadow-sm">
                             Utama
                           </span>
                         )}
                       </div>
-                      <p className="text-[13px] text-gray-500 mt-1 leading-relaxed line-clamp-2">
+                      <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed line-clamp-2 font-medium">
                         {addr.address}
                       </p>
                       {addr.notes && (
-                        <p className="text-[11px] text-brand-600 font-medium mt-1">
+                        <p className="text-[11px] text-[#B48A5E] font-bold mt-1.5 bg-[#B48A5E]/5 px-2 py-0.5 rounded-md inline-block">
                           Catatan: "{addr.notes}"
                         </p>
                       )}
                       {(addr.recipient || addr.phone) && (
-                        <p className="text-[11px] text-gray-400 mt-1 font-medium">
+                        <p className="text-[11px] text-gray-400 mt-1.5 font-semibold">
                           {addr.recipient || '-'} · {addr.phone || '-'}
                         </p>
                       )}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-400 transition-colors self-center shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#B48A5E] group-hover:translate-x-0.5 transition-all self-center shrink-0" />
                   </button>
                 ))}
 
                 {addresses.length === 0 && (
                   <div className="text-center py-16 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
                     <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="font-serif text-lg text-gray-800 mb-1">Belum Ada Alamat</h3>
+                    <h3 className="font-serif text-lg text-gray-800 mb-1 font-bold">Belum Ada Alamat</h3>
                     <p className="text-sm text-gray-500 mb-6">Tambahkan alamat pengiriman favoritmu.</p>
                   </div>
                 )}
 
                 <button
                   onClick={handleCreateNew}
-                  className="w-full py-4 rounded-2xl border border-dashed border-[#B48A5E]/40 text-[#B48A5E] font-bold text-[14px] hover:bg-[#B48A5E]/5 transition-all flex items-center justify-center gap-2 mt-4"
+                  className="w-full py-4 rounded-2xl border-2 border-dashed border-[#B48A5E]/30 text-[#B48A5E] font-black text-[14px] hover:bg-[#B48A5E]/5 transition-all flex items-center justify-center gap-2 mt-4"
                 >
-                  <Plus className="w-4 h-4" /> Tambah Alamat Baru
+                  <Plus className="w-4.5 h-4.5" /> Tambah Alamat Baru
                 </button>
               </div>
             )}
@@ -1712,19 +1739,16 @@ function AddressesSection({ user }: { user: UserShape }) {
               {/* Fixed bounce center pin indicator */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[38px] pointer-events-none z-[1000] flex flex-col items-center">
                 <div className="relative flex items-center justify-center">
-                  <div className="w-11 h-11 bg-emerald-500 rounded-full border-3 border-white shadow-2xl flex items-center justify-center z-10">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
+                  <div className="w-12 h-12 bg-[#1E3F20] rounded-full border-3 border-[#D4A574] shadow-2xl flex items-center justify-center z-10 animate-bounce text-[#D4A574]">
+                    <MapPin className="w-6 h-6 fill-[#D4A574]/20" />
                   </div>
-                  <div className="absolute top-[34px] w-2.5 h-1 bg-black/30 rounded-full scale-x-150 blur-[1px]" />
+                  <div className="absolute top-[40px] w-4 h-1.5 bg-black/20 rounded-full blur-[1px] scale-x-150" />
                 </div>
               </div>
 
               {/* Geser untuk pindah lokasi overlay tag (Screen 2) */}
               <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
-                <div className="bg-[#5C3EBA] text-white px-5 py-1.5 rounded-full text-[12px] font-bold shadow-md flex items-center gap-1.5 whitespace-nowrap">
+                <div className="bg-[#1E3F20]/95 backdrop-blur-sm text-white px-5 py-2 rounded-full text-[11px] font-bold shadow-md flex items-center gap-2 border border-[#D4A574]/20 whitespace-nowrap">
                   <span>Geser untuk pindah lokasi</span>
                 </div>
               </div>
@@ -1734,13 +1758,13 @@ function AddressesSection({ user }: { user: UserShape }) {
                 onClick={handleGPSInMap}
                 className="absolute bottom-32 right-4 z-[1000] w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all text-gray-700 border border-gray-100"
               >
-                <LocateFixed className="w-5 h-5" />
+                <LocateFixed className="w-5 h-5 text-[#B48A5E]" />
               </button>
 
               {/* Reverse Geocode display banner & Select location button */}
               <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4.5 rounded-t-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.08)] z-[1000] space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100">
                     <MapPin className="w-4 h-4 text-emerald-600 fill-emerald-600/10" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1759,7 +1783,7 @@ function AddressesSection({ user }: { user: UserShape }) {
                 <button
                   onClick={handleConfirmMapLocation}
                   disabled={reverseGeocoding || !mapAddress}
-                  className="w-full py-4 bg-[#C2272D] hover:bg-[#A11E23] text-white font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-[15px]"
+                  className="w-full py-4.5 bg-gradient-to-r from-[#B48A5E] to-[#946F48] hover:opacity-95 text-white font-black rounded-2xl shadow-lg shadow-[#B48A5E]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
                 >
                   Pilih Lokasi Ini
                 </button>
@@ -1778,7 +1802,7 @@ function AddressesSection({ user }: { user: UserShape }) {
             className="fixed inset-0 z-[100] bg-[#FDFBF7] flex flex-col pt-safe pb-safe"
           >
             {/* Header */}
-            <div className="px-4 py-4 flex items-center gap-4 bg-white sticky top-0 z-10 border-b border-gray-50 shadow-sm">
+            <div className="px-4 py-4 flex items-center gap-4 bg-white sticky top-0 z-10 border-b border-gray-55 shadow-sm">
               <button
                 onClick={() => {
                   setMapCameFrom('DETAIL');
@@ -1795,7 +1819,7 @@ function AddressesSection({ user }: { user: UserShape }) {
                   setMapCameFrom('DETAIL');
                   setStep('MAP');
                 }}
-                className="w-10 h-10 flex items-center justify-center rounded-full text-gray-800 hover:bg-gray-50 active:scale-95 transition-all"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-[#B48A5E] hover:bg-[#B48A5E]/5 active:scale-95 transition-all"
               >
                 <Map className="w-5 h-5" />
               </button>
@@ -1806,10 +1830,10 @@ function AddressesSection({ user }: { user: UserShape }) {
               
               {/* Selected coordinates details display */}
               <div className="space-y-1.5">
-                <h3 className="font-bold text-gray-800 text-[15px] leading-tight">
+                <h3 className="font-black text-gray-800 text-[15px] leading-tight">
                   {mapAddressTitle || 'Lokasi Dipilih'}
                 </h3>
-                <p className="text-[13px] text-gray-500 leading-relaxed font-medium">
+                <p className="text-[13px] text-gray-500 leading-relaxed font-semibold">
                   {mapAddress}
                 </p>
               </div>
@@ -1822,61 +1846,61 @@ function AddressesSection({ user }: { user: UserShape }) {
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="rumah pink"
                   rows={2}
-                  className="w-full px-4 py-3 bg-[#F4F4F4] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900 resize-none shadow-inner"
+                  className="w-full px-4 py-3 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-1 focus:ring-[#B48A5E]/20 transition-all outline-none text-[15px] font-medium text-gray-900 resize-none shadow-inner"
                 />
               </div>
 
               {/* Address Label (Nama Alamat - e.g. sekolah) */}
               <div className="space-y-1">
                 <label className="text-[12px] font-bold text-gray-500">
-                  Nama Alamat <span className="text-red-500">*</span>
+                  Nama Alamat <span className="text-red-550">*</span>
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="sekolah"
-                  className="w-full px-4 py-3.5 bg-[#F4F4F4] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900 shadow-inner"
+                  className="w-full px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-1 focus:ring-[#B48A5E]/20 transition-all outline-none text-[15px] font-medium text-gray-900 shadow-inner"
                 />
               </div>
 
               {/* Recipient Name (Penerima - e.g. Axelino Manibuy) */}
               <div className="space-y-1">
                 <label className="text-[12px] font-bold text-gray-500">
-                  Penerima <span className="text-red-500">*</span>
+                  Penerima <span className="text-red-550">*</span>
                 </label>
                 <input
                   type="text"
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
                   placeholder="Axelino Manibuy"
-                  className="w-full px-4 py-3.5 bg-[#F4F4F4] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900 shadow-inner"
+                  className="w-full px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-1 focus:ring-[#B48A5E]/20 transition-all outline-none text-[15px] font-medium text-gray-900 shadow-inner"
                 />
               </div>
 
               {/* Phone number (No. Telepon - e.g. 081344446442) */}
               <div className="space-y-1">
                 <label className="text-[12px] font-bold text-gray-500">
-                  No. Telepon <span className="text-red-500">*</span>
+                  No. Telepon <span className="text-red-555">*</span>
                 </label>
                 <input
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="081344446442"
-                  className="w-full px-4 py-3.5 bg-[#F4F4F4] border border-transparent rounded-2xl focus:bg-white focus:border-brand-300 transition-all outline-none text-[15px] font-medium text-gray-900 shadow-inner"
+                  className="w-full px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E] focus:ring-1 focus:ring-[#B48A5E]/20 transition-all outline-none text-[15px] font-medium text-gray-900 shadow-inner"
                 />
               </div>
 
               {/* Main Address Star toggle (Alamat Utama) */}
-              <div className="flex items-center justify-between p-4 bg-[#FFF9EE] rounded-2xl border border-brand-100/40 shadow-sm">
+              <div className="flex items-center justify-between p-4 bg-[#FFFBF5] rounded-2xl border border-[#D4A574]/25 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-brand-100">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-[#D4A574]/20">
                     <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-gray-900">Alamat Utama</h4>
-                    <p className="text-[11px] text-brand-700/80 mt-0.5 font-medium">Jadikan alamat utama untuk delivery</p>
+                    <h4 className="text-sm font-black text-gray-900">Alamat Utama</h4>
+                    <p className="text-[11px] text-gray-500 mt-0.5 font-semibold">Jadikan alamat default untuk pengantaran</p>
                   </div>
                 </div>
                 <input
@@ -1884,7 +1908,7 @@ function AddressesSection({ user }: { user: UserShape }) {
                   checked={isDefault}
                   disabled={addresses.length === 0} // First address is always default
                   onChange={(e) => setIsDefault(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-amber-500 cursor-pointer"
+                  className="w-5 h-5 rounded border-gray-300 text-[#B48A5E] focus:ring-[#B48A5E] accent-[#B48A5E] cursor-pointer"
                 />
               </div>
 
@@ -1893,9 +1917,9 @@ function AddressesSection({ user }: { user: UserShape }) {
                 <button
                   type="button"
                   onClick={handleDeleteAddress}
-                  className="w-full flex items-center justify-center gap-2 py-4 text-[#C2272D] font-bold text-sm bg-red-50/50 rounded-2xl hover:bg-red-50 active:scale-95 transition-all border border-red-100/50 mt-4"
+                  className="w-full flex items-center justify-center gap-2 py-4 text-red-500 font-bold bg-red-50/30 rounded-2xl hover:bg-red-50 active:scale-95 transition-all border border-red-100/50 mt-4"
                 >
-                  <Trash2 className="w-4 h-4 text-[#C2272D]" />
+                  <Trash2 className="w-4 h-4 text-red-500" />
                   Hapus Alamat
                 </button>
               )}
@@ -1906,7 +1930,7 @@ function AddressesSection({ user }: { user: UserShape }) {
               <button
                 onClick={handleSaveAddress}
                 disabled={saving || !name.trim() || !recipient.trim() || !phone.trim()}
-                className="w-full py-4 bg-[#B48A5E] hover:bg-[#946F48] disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold rounded-2xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center text-[16px] gap-2"
+                className="w-full py-4.5 bg-gradient-to-br from-[#B48A5E] to-[#946F48] hover:opacity-95 text-white font-black rounded-2xl shadow-xl shadow-[#B48A5E]/15 transition-all active:scale-[0.98] flex items-center justify-center text-sm gap-2"
               >
                 {saving && <Loader2 className="w-5 h-5 animate-spin" />}
                 Lanjutkan
@@ -2164,69 +2188,42 @@ function LoyaltySection({ user, milestones }: { user: UserShape; milestones: Mil
       className="space-y-4"
     >
       {/* Points Progress Card */}
-      <div className="bg-gradient-to-br from-[#B48A5E] to-[#946F48] rounded-3xl p-5 text-white relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-black/10 rounded-full blur-xl" />
+      <div className="bg-gradient-to-br from-[#1E3F20] via-[#244C27] to-[#1E3F20] rounded-3xl p-6 text-white relative overflow-hidden border border-[#D4A574]/20 shadow-[0_12px_30px_rgba(30,63,32,0.15)]">
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-[#D4A574]/10 rounded-full blur-xl pointer-events-none" />
         
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-white/60 font-semibold">Total Poin Kamu</p>
-              <p className="text-4xl font-serif font-bold mt-1">{user.points}</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-300 font-bold animate-pulse">Total Poin Kamu</p>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="text-4xl font-black tracking-tight text-[#D4A574] drop-shadow-sm font-serif">{user.points}</span>
+                <span className="text-[12px] font-bold text-gray-300">pts</span>
+              </div>
             </div>
             <button
               onClick={() => setShowQR(!showQR)}
-              className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
+              className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all active:scale-95 text-[#D4A574] hover:text-white"
             >
               <QrCode className="w-6 h-6" />
             </button>
           </div>
 
           {/* Progress Bar */}
-          <div className="mb-3">
-            <div className="flex justify-between text-[10px] text-white/60 mb-1.5 font-medium">
+          <div className="mb-2">
+            <div className="flex justify-between text-[11px] text-gray-200 mb-2 font-semibold">
               <span>{user.points} / {maxPoints} poin</span>
               <span>🎁 {milestones?.milestone3?.reward || 'Minuman Gratis'}</span>
             </div>
-            <div className="h-2.5 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+            <div className="h-3 bg-black/35 rounded-full overflow-hidden p-[2px] border border-white/5">
               <motion.div
-                className="h-full bg-gradient-to-r from-green-400 to-emerald-300 rounded-full"
+                className="h-full bg-gradient-to-r from-[#D4A574] via-[#F4D0A4] to-[#B48A5E] rounded-full shadow-[0_0_8px_rgba(212,165,116,0.6)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 1, ease: 'easeOut' }}
               />
             </div>
           </div>
-
-          {/* Milestone markers */}
-          {milestones && (
-            <div className="flex gap-2 mt-3">
-              {milestones.milestone1.enabled && (
-                <div className={`flex-1 text-center py-1.5 rounded-xl text-[9px] font-bold ${
-                  user.points >= milestones.milestone1.target ? 'bg-green-400/20 text-green-300' : 'bg-white/5 text-white/40'
-                }`}>
-                  <Target className="w-3 h-3 mx-auto mb-0.5" />
-                  {milestones.milestone1.target}p · {milestones.milestone1.reward}
-                </div>
-              )}
-              {milestones.milestone2.enabled && (
-                <div className={`flex-1 text-center py-1.5 rounded-xl text-[9px] font-bold ${
-                  user.points >= milestones.milestone2.target ? 'bg-blue-400/20 text-blue-300' : 'bg-white/5 text-white/40'
-                }`}>
-                  <Award className="w-3 h-3 mx-auto mb-0.5" />
-                  {milestones.milestone2.target}p · {milestones.milestone2.reward}
-                </div>
-              )}
-              {milestones.milestone3.enabled && (
-                <div className={`flex-1 text-center py-1.5 rounded-xl text-[9px] font-bold ${
-                  user.points >= milestones.milestone3.target ? 'bg-emerald-400/20 text-emerald-300' : 'bg-white/5 text-white/40'
-                }`}>
-                  <Trophy className="w-3 h-3 mx-auto mb-0.5" />
-                  {milestones.milestone3.target}p · {milestones.milestone3.reward}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -2239,43 +2236,95 @@ function LoyaltySection({ user, milestones }: { user: UserShape; milestones: Mil
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 text-center">
-              <p className="text-xs text-gray-500 mb-3 font-medium">Tunjukkan QR ini ke kasir untuk mendapat poin</p>
+            <div className="bg-white rounded-3xl border border-[#D4A574]/20 shadow-lg p-6 text-center">
+              <p className="text-xs text-gray-500 mb-4 font-bold">Tunjukkan QR ini ke kasir untuk mendapat poin</p>
               {/* QR Code using Google Charts API */}
-              <div className="inline-block p-3 bg-white rounded-2xl border-2 border-dashed border-[#B48A5E]/20">
+              <div className="inline-block p-3.5 bg-white rounded-3xl border-4 border-[#D4A574] shadow-md animate-pulse">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(user.referralCode)}&bgcolor=ffffff&color=18442D`}
                   alt="QR Code"
                   width={180}
                   height={180}
-                  className="rounded-lg"
+                  className="rounded-xl"
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-3 font-mono">{user.referralCode}</p>
+              <p className="text-xs text-gray-400 mt-4 font-mono font-bold tracking-widest">{user.referralCode}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Milestone markers grid */}
+      {milestones && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { key: 'milestone1', info: milestones.milestone1, icon: Target, label: 'Milestone 1' },
+            { key: 'milestone2', info: milestones.milestone2, icon: Award, label: 'Milestone 2' },
+            { key: 'milestone3', info: milestones.milestone3, icon: Trophy, label: 'Milestone 3' }
+          ].map(({ key, info, icon: Icon, label }) => {
+            if (!info.enabled) return null;
+            const isReached = user.points >= info.target;
+            return (
+              <div
+                key={key}
+                className={`rounded-2xl p-3 border text-center transition-all flex flex-col items-center justify-between min-h-[120px] shadow-sm ${
+                  isReached
+                    ? 'bg-gradient-to-b from-[#FFFBF5] to-[#FFF6EB] border-[#D4A574] ring-1 ring-[#D4A574]/20 shadow-md shadow-[#D4A574]/5 scale-[1.02]'
+                    : 'bg-white/50 border-gray-100 opacity-60'
+                }`}
+              >
+                <div className="space-y-1 flex flex-col items-center">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm mb-1 ${
+                    isReached ? 'bg-[#1E3F20] text-[#D4A574]' : 'bg-gray-150 text-gray-400'
+                  }`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${isReached ? 'text-[#B48A5E]' : 'text-gray-400'}`}>
+                    {label}
+                  </span>
+                  <span className="text-[13px] font-black text-gray-800 leading-tight">
+                    {info.target} pts
+                  </span>
+                  <p className="text-[9px] text-gray-500 font-semibold line-clamp-2 leading-tight px-0.5 mt-0.5">
+                    {info.reward}
+                  </p>
+                </div>
+                <div className="mt-2 w-full">
+                  {isReached ? (
+                    <span className="text-[8px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      Tercapai!
+                    </span>
+                  ) : (
+                    <span className="text-[8px] font-bold text-gray-400">
+                      -{info.target - user.points} pts lagi
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Referral Code */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-2xl bg-violet-50 flex items-center justify-center">
-            <Share2 className="w-5 h-5 text-violet-600" />
+      <div className="bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm p-5">
+        <div className="flex items-center gap-3.5 mb-4">
+          <div className="w-10 h-10 rounded-2xl bg-[#B48A5E]/5 flex items-center justify-center border border-[#B48A5E]/15 text-[#B48A5E]">
+            <Share2 className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-[14px] font-bold text-gray-800">Ajak Teman, Dapat Reward!</h4>
-            <p className="text-[11px] text-gray-500">Bagikan link di bawah ini</p>
+            <h4 className="text-[14px] font-black text-gray-850">Ajak Teman, Dapat Reward!</h4>
+            <p className="text-[11px] text-gray-500 font-medium">Bagikan link pendaftaran Anda di bawah</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100 text-[12px] font-mono text-gray-600 truncate">
+          <div className="flex-1 px-3.5 py-3 bg-[#FFFBF5] rounded-2xl border border-[#D4A574]/15 text-[12px] font-mono text-gray-600 truncate shadow-inner">
             {origin ? `${origin}/register?ref=${user.referralCode}` : user.referralCode}
           </div>
           <button
             onClick={copyReferralCode}
-            className={`px-4 py-2.5 rounded-xl text-[12px] font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
-              copied ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-[#B48A5E] text-white hover:bg-[#946F48]'
+            className={`px-5 py-3 rounded-2xl text-[12px] font-black flex items-center gap-1.5 transition-all active:scale-95 ${
+              copied ? 'bg-emerald-50 text-emerald-600 border border-green-200' : 'bg-[#B48A5E] text-white hover:bg-[#946F48] shadow-md shadow-[#B48A5E]/10'
             }`}
           >
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -2285,32 +2334,32 @@ function LoyaltySection({ user, milestones }: { user: UserShape; milestones: Mil
       </div>
 
       {/* Cara Mendapatkan Poin */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 space-y-3">
-        <h4 className="font-serif text-sm font-bold text-gray-800 flex items-center gap-2">
+      <div className="bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm p-5 space-y-4">
+        <h4 className="font-serif text-sm font-bold text-gray-850 flex items-center gap-2">
           🌱 Cara Mengumpulkan Poin & Voucher
         </h4>
         <div className="space-y-4">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-sm shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#1E3F20]/5 flex items-center justify-center text-[#1E3F20] font-black text-sm shrink-0 border border-[#1E3F20]/10">
               1
             </div>
             <div>
-              <h5 className="text-[13px] font-bold text-gray-800">Setiap Pembelian Transaksi</h5>
-              <p className="text-[11px] text-gray-500 mt-0.5">Dapatkan poin dari setiap cup minuman segar yang dipesan (online atau kasir).</p>
+              <h5 className="text-[13px] font-black text-gray-800">Setiap Transaksi Pembelian</h5>
+              <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed font-medium">Dapatkan poin otomatis dari setiap cup minuman segar yang Anda pesan melalui web app atau langsung di kasir.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 font-bold text-sm shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#2E5A44]/5 flex items-center justify-center text-[#2E5A44] font-black text-sm shrink-0 border border-[#2E5A44]/10">
               2
             </div>
             <div>
-              <h5 className="text-[13px] font-bold text-gray-850 flex items-center gap-1.5">
+              <h5 className="text-[13px] font-black text-gray-850 flex items-center gap-1.5">
                 Bawa Tumbler / Wadah Sendiri
-                <span className="px-1.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[8px] font-extrabold uppercase">Eco Bonus</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[8px] font-extrabold uppercase tracking-wide">Eco Bonus</span>
               </h5>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                Kurangi penggunaan gelas plastik sekali pakai. Bawa tumbler sendiri untuk dapat **ekstra poin** & **voucher eco-reward langsung** sesuai pengaturan toko!
+              <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed font-medium">
+                Bantu kurangi limbah plastik sekali pakai. Bawa tumbler ramah lingkungan Anda sendiri untuk mendapatkan <strong className="text-[#2E5A44]">ekstra poin</strong> dan <strong className="text-[#2E5A44]">voucher reward khusus</strong> yang langsung ditambahkan saat checkout!
               </p>
             </div>
           </div>
@@ -2321,18 +2370,69 @@ function LoyaltySection({ user, milestones }: { user: UserShape; milestones: Mil
 }
 
 function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
+  const router = useRouter();
+  const [claimCode, setClaimCode] = useState('');
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState('');
+  
+  // Tab Filter States: 'AVAILABLE' | 'USED' | 'EXPIRED'
+  const [filter, setFilter] = useState<'AVAILABLE' | 'USED' | 'EXPIRED'>('AVAILABLE');
+
   const getVoucherIcon = (type: string) => {
     switch (type) {
       case 'FREE_TOPPING': return '🧋';
       case 'UPGRADE_SIZE': return '📐';
       case 'FREE_DRINK': return '🍵';
-      case 'DISCOUNT_10':
-      case 'DISCOUNT_20': return '💸';
+      case 'DISCOUNT_PCT':
+      case 'DISCOUNT_RP': return '💸';
+      case 'GRATIS_ONGKIR': return '🚚';
       default: return '🎁';
     }
   };
 
-  const activeVouchers = vouchers.filter(v => !v.isUsed);
+  const handleClaim = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!claimCode.trim()) return;
+
+    setClaiming(true);
+    setClaimError('');
+    setClaimSuccess('');
+
+    try {
+      const res = await fetch('/api/user/vouchers/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: claimCode })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setClaimError(data.error || 'Gagal mengklaim voucher');
+      } else {
+        setClaimSuccess(data.message || 'Voucher berhasil diklaim!');
+        setClaimCode('');
+        router.refresh(); // Refresh to pull updated vouchers
+      }
+    } catch (err) {
+      setClaimError('Terjadi kesalahan jaringan');
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  const now = new Date();
+  
+  const filteredVouchers = vouchers.filter(v => {
+    const isExpired = v.expiresAt ? new Date(v.expiresAt) < now : false;
+    if (filter === 'AVAILABLE') {
+      return !v.isUsed && !isExpired;
+    } else if (filter === 'USED') {
+      return v.isUsed;
+    } else {
+      return !v.isUsed && isExpired;
+    }
+  });
 
   return (
     <motion.section
@@ -2342,97 +2442,142 @@ function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
       exit={{ opacity: 0, y: 20 }}
       className="space-y-6"
     >
-      {/* Welcome Showcase Banner */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-100/50 rounded-3xl p-5 border border-amber-100 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl">
-          🎉
-        </div>
-        <div className="flex-1">
-          <h4 className="text-[15px] font-extrabold text-amber-900 leading-tight">Spesial Pengguna Baru</h4>
-          <p className="text-[12px] text-amber-700/80 mt-1 leading-relaxed">
-            Daftar sekarang dan nikmati voucher diskon belanja langsung yang otomatis ditambahkan ke akun Anda!
-          </p>
-        </div>
+      {/* Input Klaim Voucher */}
+      <div className="bg-white/80 border border-[#D4A574]/15 shadow-sm rounded-3xl p-5 space-y-4">
+        <h3 className="font-serif text-sm font-bold text-gray-800 flex items-center gap-2">
+          🎟️ Punya Kode Voucher?
+        </h3>
+        <form onSubmit={handleClaim} className="flex gap-2">
+          <input
+            type="text"
+            value={claimCode}
+            onChange={(e) => setClaimCode(e.target.value)}
+            placeholder="Contoh: MATCHABOYBARU"
+            className="flex-1 px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E]/60 outline-none text-sm font-bold uppercase placeholder:normal-case placeholder:font-medium placeholder:text-gray-400 transition-all shadow-inner"
+            disabled={claiming}
+          />
+          <button
+            type="submit"
+            disabled={claiming || !claimCode.trim()}
+            className="px-6 py-3.5 bg-[#B48A5E] hover:bg-[#946F48] disabled:bg-gray-100 disabled:text-gray-400 text-white font-black rounded-2xl transition-all flex items-center justify-center shrink-0 text-sm shadow-md shadow-[#B48A5E]/10"
+          >
+            {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Klaim'}
+          </button>
+        </form>
+
+        {claimError && (
+          <p className="text-xs text-red-500 font-bold px-1">{claimError}</p>
+        )}
+        {claimSuccess && (
+          <p className="text-xs text-emerald-600 font-bold px-1">{claimSuccess}</p>
+        )}
       </div>
 
-      {/* Welcome Vouchers Showcase */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 space-y-4">
-        <h3 className="font-serif text-base font-bold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
-          ✨ Promo Voucher Pengguna Baru
-        </h3>
-        
-        <div className="grid grid-cols-1 gap-3">
-          <div className="relative overflow-hidden rounded-2xl border border-dashed border-amber-200 bg-amber-50/20 p-4 flex items-center gap-3">
-            <div className="text-3xl">💸</div>
-            <div className="flex-1">
-              <h5 className="text-[13px] font-bold text-gray-800">Diskon Potongan Rp 10.000</h5>
-              <p className="text-[11px] text-gray-500 mt-0.5">Potongan langsung tanpa minimum transaksi untuk pembelian pertama.</p>
-            </div>
-            <span className="text-[10px] font-extrabold text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-full uppercase">
-              Welcome Pack
-            </span>
-          </div>
-
-          <div className="relative overflow-hidden rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-4 flex items-center gap-3 opacity-75">
-            <div className="text-3xl">📐</div>
-            <div className="flex-1">
-              <h5 className="text-[13px] font-bold text-gray-800">Free Upgrade Size</h5>
-              <p className="text-[11px] text-gray-500 mt-0.5">Nikmati upgrade ukuran cup gratis untuk minuman pilihan.</p>
-            </div>
-            <span className="text-[10px] font-extrabold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full uppercase">
-              Milestone 2
-            </span>
-          </div>
-        </div>
+      {/* Pill Filter Tabs */}
+      <div className="flex gap-1.5 p-1.5 bg-[#FFFBF5]/85 border border-[#D4A574]/15 rounded-2xl shadow-inner">
+        <button
+          onClick={() => setFilter('AVAILABLE')}
+          className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
+            filter === 'AVAILABLE'
+              ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
+              : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+          }`}
+        >
+          Tersedia ({vouchers.filter(v => !v.isUsed && (!v.expiresAt || new Date(v.expiresAt) >= now)).length})
+        </button>
+        <button
+          onClick={() => setFilter('USED')}
+          className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
+            filter === 'USED'
+              ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
+              : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+          }`}
+        >
+          Terpakai ({vouchers.filter(v => v.isUsed).length})
+        </button>
+        <button
+          onClick={() => setFilter('EXPIRED')}
+          className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
+            filter === 'EXPIRED'
+              ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
+              : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+          }`}
+        >
+          Kedaluwarsa ({vouchers.filter(v => !v.isUsed && v.expiresAt && new Date(v.expiresAt) < now).length})
+        </button>
       </div>
 
       {/* Active Vouchers List */}
-      <div>
-        <h3 className="font-serif text-lg font-medium text-gray-800 mb-3 flex items-center gap-2">
-          <Ticket className="w-5 h-5 text-[#B48A5E]" />
-          Voucher Saya
-        </h3>
-
-        {activeVouchers.length === 0 ? (
-          <div className="text-center py-10 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
+      <div className="space-y-3">
+        {filteredVouchers.length === 0 ? (
+          <div className="text-center py-12 px-6 bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm">
             <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h4 className="font-serif text-base text-gray-800 mb-1">Belum Ada Voucher Aktif</h4>
-            <p className="text-[12px] text-gray-500 max-w-xs mx-auto leading-relaxed">
-              Kumpulkan poin pesanan Anda atau bawa tumbler sendiri untuk mendapatkan reward voucher eksklusif!
+            <h4 className="font-serif text-base text-gray-800 mb-1 font-bold">
+              {filter === 'AVAILABLE' ? 'Belum Ada Voucher Aktif' : filter === 'USED' ? 'Belum Ada Voucher Terpakai' : 'Belum Ada Voucher Kedaluwarsa'}
+            </h4>
+            <p className="text-[12px] text-gray-500 max-w-xs mx-auto leading-relaxed font-semibold">
+              {filter === 'AVAILABLE'
+                ? 'Kumpulkan poin pesanan Anda atau klaim kode promo di atas untuk mendapatkan voucher!'
+                : 'Voucher yang telah sukses digunakan untuk transaksi akan tercantum di sini.'}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {activeVouchers.map((v, i) => (
+          <div className="space-y-3.5">
+            {filteredVouchers.map((v, i) => (
               <motion.div
                 key={v.id}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex items-stretch"
+                onClick={() => filter === 'AVAILABLE' && router.push(`/vouchers/${v.id}`)}
+                className={`ticket-card rounded-2xl border border-[#D4A574]/20 shadow-sm overflow-hidden flex items-stretch transition-all relative min-h-[105px] ${
+                  filter === 'AVAILABLE' ? 'cursor-pointer hover:border-[#B48A5E]/40 hover:shadow-md active:scale-[0.99] group' : 'opacity-70'
+                }`}
               >
-                {/* Left Side Tab Decorator */}
-                <div className="w-12 bg-gradient-to-b from-[#B48A5E]/10 to-[#946F48]/10 flex flex-col items-center justify-center text-xl border-r border-dashed border-gray-100 relative">
-                  {/* Decorative Scissors Notch */}
-                  <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-[#FDFBF7] rounded-full border border-gray-100" />
-                  <div className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-[#FDFBF7] rounded-full border border-gray-100" />
+                {/* Punch Holes exactly at the division line between stub and body */}
+                {/* Since stub is w-14, division is at 56px */}
+                <div className="absolute left-[52px] -top-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
+                <div className="absolute left-[52px] -bottom-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
+
+                {/* Left Side Tab Decorator (Stub) */}
+                <div className="w-14 bg-gradient-to-br from-[#1E3F20] to-[#2E5A44] flex flex-col items-center justify-center text-2xl border-r border-dashed border-[#D4A574]/30 relative shrink-0 text-[#D4A574]">
                   {getVoucherIcon(v.type)}
                 </div>
                 
-                <div className="flex-1 p-4">
-                  <h4 className="text-[14px] font-bold text-gray-800 leading-snug">{v.description}</h4>
-                  <p className="text-[10px] text-gray-400 font-mono mt-1">Kode: {v.code.slice(0, 8).toUpperCase()}</p>
+                {/* Right Side Main Details */}
+                <div className="flex-1 p-4 pl-5 relative overflow-hidden flex flex-col justify-between">
+                  {/* Subtle Tea Leaf Watermark */}
+                  <Coffee className="absolute right-2 -bottom-4 w-20 h-20 text-[#2E5A44] opacity-[0.03] pointer-events-none rotate-12" />
+                  
+                  <div>
+                    <h4 className="text-[14px] font-black text-gray-900 leading-snug">{v.description}</h4>
+                    <span className="text-[9px] font-mono font-bold text-[#B48A5E] bg-[#B48A5E]/5 px-2 py-0.5 rounded border border-[#B48A5E]/15 mt-1.5 inline-block uppercase">
+                      Kode: {v.code.slice(0, 8).toUpperCase()}
+                    </span>
+                  </div>
+                  
                   {v.expiresAt && (
-                    <p className="text-[10px] text-amber-600 font-medium mt-1">
-                      Berlaku sampai {new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    <p className={`text-[10px] font-semibold mt-2 ${filter === 'AVAILABLE' ? 'text-amber-600' : 'text-gray-400'}`}>
+                      Berlaku s/d {new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   )}
                 </div>
 
-                <div className="flex flex-col items-center justify-center px-4 border-l border-gray-50 bg-gray-50/50">
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
-                    Aktif
-                  </span>
+                {/* Rightmost Action Label/Badge */}
+                <div className="flex flex-col items-center justify-center px-4 border-l border-gray-50 bg-[#FFFBF5]/35 shrink-0 select-none">
+                  {filter === 'AVAILABLE' ? (
+                    <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#B48A5E] to-[#D4A574] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm group-hover:from-[#946F48] group-hover:to-[#B48A5E] transition-all">
+                      Gunakan
+                    </span>
+                  ) : filter === 'USED' ? (
+                    <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
+                      Terpakai
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-red-50 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                      Hangus
+                    </span>
+                  )}
                 </div>
               </motion.div>
             ))}

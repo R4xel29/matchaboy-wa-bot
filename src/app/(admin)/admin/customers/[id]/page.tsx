@@ -19,6 +19,7 @@ import {
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import CustomerActions from './customer-actions';
+import CustomerSessions from './customer-sessions';
 
 export const revalidate = 0;
 
@@ -45,7 +46,7 @@ export default async function CustomerDetailPage({ params }: PageProps) {
       },
       sessions: {
         take: 5,
-        orderBy: { expires: 'desc' }
+        orderBy: { lastActive: 'desc' }
       },
       activityLogs: {
         where: { action: 'LOGIN' },
@@ -183,6 +184,9 @@ export default async function CustomerDetailPage({ params }: PageProps) {
 
         {/* Right Column: Activities, Vouchers, Orders */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Sesi & Perangkat Aktif */}
+          <CustomerSessions sessions={customer.sessions} userId={customer.id} />
+
           {/* Riwayat Login & Aktivitas */}
           <div className="bg-white rounded-3xl border border-border/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6">
             <div className="flex items-center gap-2 mb-6">

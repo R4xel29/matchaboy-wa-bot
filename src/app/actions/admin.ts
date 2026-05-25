@@ -77,3 +77,68 @@ export async function impersonateUserAction(targetUserId: string) {
       redirectTo: '/profile'
   });
 }
+
+export async function revokeSessionAction(sessionId: string, targetUserId: string) {
+  const session = await auth()
+  
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  try {
+    const targetSession = await prisma.session.findUnique({
+      where: { id: sessionId }
+    })
+
+    if (!targetSession || targetSession.userId !== targetUserId) {
+      return { success: false, error: 'Session not found' }
+    }
+
+    await prisma.session.delete({
+      where: { id: sessionId }
+    })
+
+    await logAdminAction({
+      userId: session.user.id,
+      action: 'DELETE',
+      entity: 'USER',
+      entityId: targetUserId,
+      details: `Memutuskan sesi perangkat (${targetSession.deviceType || 'Unknown'} - ${targetSession.os || 'Unknown'}) milik pengguna`
+    });
+
+    revalidatePath(`/admin/customers/${targetUserId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to revoke session:', error)
+    return { success: false, error: 'Failed to revoke session' }
+  }
+}
+
+export async function revokeAllSessionsAction(targetUserId: string) {
+  const session = await auth()
+  
+  if (!session?.user || session.user.role !== 'ADMIN') {
+    return { success: false, error: 'Unauthorized' }
+  }
+
+  try {
+    const result = await prisma.session.deleteMany({
+      where: { userId: targetUserId }
+    })
+
+    await logAdminAction({
+      userId: session.user.id,
+      action: 'DELETE',
+      entity: 'USER',
+      entityId: targetUserId,
+      details: `Mengeluarkan pengguna dari seluruh perangkat (${result.count} sesi dihapus)`
+    });
+
+    revalidatePath(`/admin/customers/${targetUserId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to revoke all sessions:', error)
+    return { success: false, error: 'Failed to revoke all sessions' }
+  }
+}
+

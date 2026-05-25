@@ -39,7 +39,7 @@ export async function GET() {
       banks,
     },
     doku: {
-      enabled: settings.dokuEnabled,
+      enabled: false, // DOKU sementara dinonaktifkan — izin belum beres
       clientId: settings.dokuClientId,
       sandbox: settings.dokuSandbox,
     },

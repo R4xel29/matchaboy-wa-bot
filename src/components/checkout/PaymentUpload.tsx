@@ -47,11 +47,11 @@ export function PaymentUpload({ orderTotal, customerName, onProofUploaded, onPay
       .then(r => r.json())
       .then(data => {
         setConfig(data);
-        // Auto-select first available method
+        // Auto-select first available method (QRIS prioritas utama)
         if (!selectedMethod) {
-          if (data.doku?.enabled) onPaymentMethodChange('DOKU');
+          if (data.qris?.enabled) onPaymentMethodChange('QRIS');
           else if (data.transfer?.enabled) onPaymentMethodChange('TRANSFER');
-          else if (data.qris?.enabled) onPaymentMethodChange('QRIS');
+          else if (data.doku?.enabled) onPaymentMethodChange('DOKU');
           else if (data.cod?.enabled) onPaymentMethodChange('COD');
         }
       })

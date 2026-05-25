@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, useMotionValueEvent, useScroll } from 'framer-motion';
-import { Search, User } from 'lucide-react';
+import { BookOpen, User } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
@@ -79,7 +79,7 @@ export function AppHeader({ onSearchClick }: AppHeaderProps) {
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-brand-100/50 transition-colors touch-target"
             aria-label="Search"
           >
-            <Search
+            <BookOpen
               className={`w-5 h-5 transition-colors duration-250 ${
                 scrolled || pathname === '/' ? 'text-brand-700' : 'text-white'
               }`}

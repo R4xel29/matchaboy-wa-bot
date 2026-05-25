@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import { Power, MapPin, Package, Navigation, Phone, Check, Loader2, AlertTriangle, Truck } from 'lucide-react';
 import { formatRupiah } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
-import { DriverNavigationMap } from '@/components/driver/DriverNavigationMap';
+import dynamic from 'next/dynamic';
+
+const DriverNavigationMap = dynamic(() => import('@/components/driver/DriverNavigationMap').then(m => m.DriverNavigationMap), { ssr: false });
 
 interface OrderItem {
   id: string;

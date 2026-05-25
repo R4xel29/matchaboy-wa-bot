@@ -24,7 +24,9 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { formatRupiah } from '@/lib/utils';
-import { LeafletTracking } from '@/components/storefront/MapboxTracking';
+import dynamic from 'next/dynamic';
+
+const LeafletTracking = dynamic(() => import('@/components/storefront/MapboxTracking').then(m => m.LeafletTracking), { ssr: false });
 
 export type TrackingOrderShape = {
   id: string;
@@ -111,9 +113,17 @@ function getOrderTypeIcon(type: string) {
 export default function OrderTrackingClient({ order }: { order: TrackingOrderShape }) {
   const router = useRouter();
   const orderId = order.id;
+
   const [copied, setCopied] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(order.status);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  // Auto-redirect to payment page if Doku payment is pending
+  useEffect(() => {
+    if (order.paymentMethod === 'DOKU' && currentStatus === 'PENDING_PAYMENT') {
+      router.replace(`/orders/${orderId}/payment`);
+    }
+  }, [order.paymentMethod, currentStatus, orderId, router]);
 
   // Cancel dialog states
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);

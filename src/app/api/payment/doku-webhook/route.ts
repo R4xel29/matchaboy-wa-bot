@@ -113,6 +113,67 @@ export async function POST(req: NextRequest) {
       } else {
         console.log(`[DOKU WEBHOOK] Order ${invoiceNumber} was already processed. Current status: ${order.status}`);
       }
+    } else if (paymentStatus === 'FAILED' || paymentStatus === 'EXPIRED' || paymentStatus === 'CANCELLED') {
+      const order = await prisma.order.findUnique({
+        where: { id: invoiceNumber },
+      });
+
+      if (order && order.status === 'PENDING_PAYMENT') {
+        await prisma.$transaction(async (tx) => {
+          // Mark order as CANCELLED
+          await tx.order.update({
+            where: { id: invoiceNumber },
+            data: {
+              status: 'CANCELLED',
+              notes: order.notes 
+                ? `${order.notes}\n[DOKU Webhook] Pembayaran kedaluwarsa/gagal dari DOKU.`
+                : '[DOKU Webhook] Pembayaran kedaluwarsa/gagal dari DOKU.',
+            },
+          });
+
+          // Restore used points
+          const pointHistories = await tx.pointHistory.findMany({
+            where: {
+              orderId: invoiceNumber,
+              amount: { lt: 0 }
+            }
+          });
+
+          for (const ph of pointHistories) {
+            const refundAmount = Math.abs(ph.amount);
+            await tx.user.update({
+              where: { id: order.userId || '' },
+              data: { points: { increment: refundAmount } }
+            });
+            await tx.pointHistory.create({
+              data: {
+                userId: order.userId || '',
+                amount: refundAmount,
+                type: 'ADMIN_ADJUST',
+                description: `Pengembalian ${refundAmount} poin karena pesanan #${invoiceNumber.slice(0, 8).toUpperCase()} gagal/batal`,
+                orderId: invoiceNumber
+              }
+            });
+          }
+
+          // Restore used voucher
+          if (order.voucherCode) {
+            const voucher = await tx.voucher.findUnique({
+              where: { code: order.voucherCode }
+            });
+            if (voucher && voucher.isUsed) {
+              await tx.voucher.update({
+                where: { id: voucher.id },
+                data: {
+                  isUsed: false,
+                  usedAt: null
+                }
+              });
+            }
+          }
+        });
+        console.log(`[DOKU WEBHOOK] Order ${invoiceNumber} cancelled/expired successfully.`);
+      }
     }
 
     return NextResponse.json({ status: 'OK' });

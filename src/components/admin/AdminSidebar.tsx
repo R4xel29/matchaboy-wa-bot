@@ -31,7 +31,8 @@ import {
   Truck,
   Archive,
   BarChart4,
-  UserX
+  UserX,
+  Ticket
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Image from 'next/image';
@@ -67,6 +68,7 @@ const SETTING_ITEMS = [
 ];
 
 const LOYALTY_ITEMS = [
+  { label: 'Kelola Voucher', href: '/admin/vouchers', icon: Ticket },
   { label: 'Loyalty Settings', href: '/admin/loyalty', icon: Gift },
   { label: 'Referral Settings', href: '/admin/referral-settings', icon: Settings },
   { label: 'Referral Tracking', href: '/admin/referrals', icon: Share2 },

@@ -10,6 +10,7 @@ export async function GET(
   const order = await prisma.order.findUnique({
     where: { id },
     select: {
+      id: true,
       status: true,
       updatedAt: true,
       orderType: true,
@@ -17,6 +18,12 @@ export async function GET(
       pickupDate: true,
       paymentMethod: true,
       paymentProofUrl: true,
+      paymentQrContent: true,
+      paymentExpiredAt: true,
+      paymentUrl: true,
+      total: true,
+      subtotal: true,
+      customerName: true,
     },
   });
 
@@ -25,6 +32,7 @@ export async function GET(
   }
 
   return NextResponse.json({
+    id: order.id,
     status: order.status,
     updatedAt: order.updatedAt.toISOString(),
     orderType: order.orderType,
@@ -32,5 +40,11 @@ export async function GET(
     pickupDate: order.pickupDate?.toISOString(),
     paymentMethod: order.paymentMethod,
     hasPaymentProof: !!order.paymentProofUrl,
+    paymentQrContent: order.paymentQrContent,
+    paymentExpiredAt: order.paymentExpiredAt?.toISOString(),
+    paymentUrl: order.paymentUrl,
+    total: order.total,
+    subtotal: order.subtotal,
+    customerName: order.customerName,
   });
 }

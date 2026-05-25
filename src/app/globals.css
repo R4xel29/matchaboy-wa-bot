@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "leaflet/dist/leaflet.css";
-
 @custom-variant dark (&:is(.dark *));
 
 /* ── Arus Brand Design System ────────────────────────────── */
@@ -43,11 +41,15 @@
   --color-cream-dark: #FFF5E6;
   --color-gold: #D4A574;
   --color-gold-light: #E8C9A0;
+  --color-matcha-dark: #1E3F20;
+  --color-matcha: #2E5A44;
+  --color-matcha-light: #E8F5E9;
+  --color-accent-gold: #D4AF37;
 
   /* Typography */
-  --font-heading: var(--font-inter);
-  --font-body: var(--font-inter);
-  --font-sans: var(--font-inter);
+  --font-heading: var(--font-playfair);
+  --font-body: var(--font-outfit);
+  --font-sans: var(--font-outfit);
 
   /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
@@ -190,4 +192,35 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 1;
+}
+
+/* Custom premium designs */
+.ticket-card {
+  position: relative;
+  overflow: visible;
+  background-color: #FFFFFF;
+}
+.ticket-card::before, .ticket-card::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #FAF8F5; /* Matches background */
+  transform: translateY(-50%);
+  z-index: 10;
+  border: 1px solid rgba(148, 111, 72, 0.08);
+}
+.ticket-card::before {
+  left: -8px;
+  border-left-color: transparent;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+.ticket-card::after {
+  right: -8px;
+  border-right-color: transparent;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
 }

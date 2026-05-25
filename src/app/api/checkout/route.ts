@@ -139,26 +139,112 @@ export async function POST(req: Request) {
             }
         }
 
+        // Helper to check product validity for a voucher template
+        const isProductValidForVoucher = (productId: string, validProductIdsJson: string | null): boolean => {
+            if (!validProductIdsJson) return true; // Null means valid for all products
+            try {
+                const validIds = JSON.parse(validProductIdsJson);
+                if (!Array.isArray(validIds) || validIds.length === 0) return true;
+                return validIds.includes(productId);
+            } catch {
+                return true;
+            }
+        }
+
         // Handle voucher
         const voucherCode = body.voucherCode
         let voucherDiscount = 0
         let ongkirDiscount = hasFreeShippingBundle ? deliveryFee : 0
         let validVoucherId = null
         if (voucherCode) {
-            const voucher = await prisma.voucher.findUnique({ where: { code: voucherCode } })
+            const voucher = await prisma.voucher.findUnique({
+                where: { code: voucherCode },
+                include: { template: true }
+            })
             if (voucher && voucher.userId === session.user.id && !voucher.isUsed && (!voucher.expiresAt || voucher.expiresAt >= new Date())) {
                 validVoucherId = voucher.id
-                if (voucher.type === 'FREE_DRINK') voucherDiscount = 25000
-                else if (voucher.type === 'FREE_TOPPING') voucherDiscount = 3000
-                else if (voucher.type === 'UPGRADE_SIZE') voucherDiscount = 5000
-                else if (voucher.type === 'REFERRAL_REWARD') voucherDiscount = 25000
-                else if (voucher.type === 'GRATIS_ONGKIR') {
-                    if (!hasFreeShippingBundle) ongkirDiscount = deliveryFee
+                
+                // If this voucher has an associated template, apply the new dynamic rules
+                if (voucher.template) {
+                    const template = voucher.template
+                    
+                    // Validate minimum purchase threshold (on total subtotal of cart)
+                    if (secureSubtotal < template.minPurchase) {
+                        return NextResponse.json({ error: `Total belanja belum memenuhi syarat minimum pembelian voucher (${formatCurrency(template.minPurchase)})` }, { status: 400 })
+                    }
+
+                    // Calculate subtotal of valid products
+                    let validProductsSubtotal = 0
+                    for (const item of body.items) {
+                        if (isProductValidForVoucher(item.productId, template.validProductIds)) {
+                            // Find the product price securely
+                            const dbProduct = dbProducts.find(p => p.id === item.productId)
+                            if (dbProduct) {
+                                // Add-ons adjustment if applicable
+                                let secureItemPrice = dbProduct.price
+                                let dbModifiers: any = {}
+                                if (dbProduct.modifiers) {
+                                    try { dbModifiers = JSON.parse(dbProduct.modifiers) } catch {}
+                                }
+                                if (dbModifiers.isBundle && item.bundleSelections && Array.isArray(item.bundleSelections)) {
+                                    let secureBundleAdjustments = 0
+                                    for (const sel of item.bundleSelections) {
+                                        const group = dbModifiers.bundleGroups?.find((g: any) => g.id === sel.groupId)
+                                        if (group) {
+                                            const option = group.options?.find((o: any) => o.productId === sel.productId)
+                                            if (option) secureBundleAdjustments += option.priceAdjustment || 0
+                                        }
+                                    }
+                                    secureItemPrice += secureBundleAdjustments
+                                } else {
+                                    let addOnsTotal = 0
+                                    if (item.addOnIds && Array.isArray(item.addOnIds) && dbModifiers.addOns) {
+                                        for (const addOnId of item.addOnIds) {
+                                            const validAddOn = dbModifiers.addOns.find((a: any) => a.id === addOnId)
+                                            if (validAddOn) addOnsTotal += validAddOn.price
+                                        }
+                                    }
+                                    secureItemPrice += addOnsTotal
+                                }
+                                validProductsSubtotal += secureItemPrice * item.quantity
+                            }
+                        }
+                    }
+
+                    // Apply discount based on template rules
+                    if (template.type === 'DISCOUNT_PCT') {
+                        let pctDiscount = Math.round((validProductsSubtotal * template.discountValue) / 100)
+                        if (template.maxDiscount) {
+                            pctDiscount = Math.min(pctDiscount, template.maxDiscount)
+                        }
+                        voucherDiscount = pctDiscount
+                    } else if (template.type === 'DISCOUNT_RP') {
+                        voucherDiscount = Math.min(template.discountValue, validProductsSubtotal)
+                    } else if (template.type === 'FREE_DRINK') {
+                        voucherDiscount = Math.min(template.discountValue || 25000, validProductsSubtotal)
+                    } else if (template.type === 'FREE_TOPPING') {
+                        voucherDiscount = Math.min(template.discountValue || 3000, validProductsSubtotal)
+                    } else if (template.type === 'UPGRADE_SIZE') {
+                        voucherDiscount = Math.min(template.discountValue || 5000, validProductsSubtotal)
+                    } else if (template.type === 'GRATIS_ONGKIR') {
+                        if (!hasFreeShippingBundle) ongkirDiscount = deliveryFee
+                    } else {
+                        voucherDiscount = template.discountValue || 10000
+                    }
+                } else {
+                    // Fallback to legacy hardcoded rules for legacy vouchers without template
+                    if (voucher.type === 'FREE_DRINK') voucherDiscount = 25000
+                    else if (voucher.type === 'FREE_TOPPING') voucherDiscount = 3000
+                    else if (voucher.type === 'UPGRADE_SIZE') voucherDiscount = 5000
+                    else if (voucher.type === 'REFERRAL_REWARD') voucherDiscount = 25000
+                    else if (voucher.type === 'GRATIS_ONGKIR') {
+                        if (!hasFreeShippingBundle) ongkirDiscount = deliveryFee
+                    }
+                    else if (voucher.type === 'DISKON_ONGKIR') {
+                        if (!hasFreeShippingBundle) ongkirDiscount = Math.min(deliveryFee, 10000)
+                    }
+                    else voucherDiscount = voucher.discountAmount || 10000
                 }
-                else if (voucher.type === 'DISKON_ONGKIR') {
-                    if (!hasFreeShippingBundle) ongkirDiscount = Math.min(deliveryFee, 10000)
-                }
-                else voucherDiscount = 10000 // CUSTOM or fallback
             } else {
                 return NextResponse.json({ error: 'Voucher tidak valid' }, { status: 400 })
             }
@@ -180,9 +266,8 @@ export async function POST(req: Request) {
         const paymentSettings = await prisma.paymentSettings.findFirst()
         const isDoku = body.paymentMethod?.toUpperCase() === 'DOKU'
         if (isDoku) {
-            if (!paymentSettings || !paymentSettings.dokuEnabled || !paymentSettings.dokuClientId || !paymentSettings.dokuSharedKey) {
-                return NextResponse.json({ error: 'Metode pembayaran DOKU sedang tidak aktif.' }, { status: 400 })
-            }
+            // DOKU sementara dinonaktifkan — izin belum beres
+            return NextResponse.json({ error: 'Metode pembayaran DOKU sedang tidak aktif sementara. Silakan gunakan QRIS atau metode lain.' }, { status: 400 })
         }
 
         // Build address string
@@ -224,9 +309,11 @@ export async function POST(req: Request) {
                     deliveryFee,
                     total: secureTotal,
                     paymentMethod: body.paymentMethod?.toUpperCase() || 'TRANSFER',
-                    status: isDoku ? 'PENDING_PAYMENT' : 'PENDING',
+                    status: (isDoku || body.paymentMethod?.toUpperCase() === 'TRANSFER' || body.paymentMethod?.toUpperCase() === 'QRIS') ? 'PENDING_PAYMENT' : 'PENDING',
                     hasTumbler,
                     notes: body.notes || null,
+                    voucherCode: voucherCode || null,
+                    paymentExpiredAt: isDoku ? new Date(Date.now() + 15 * 60 * 1000) : null,
                     items: {
                         create: orderItemsToCreate
                     }
@@ -265,7 +352,7 @@ export async function POST(req: Request) {
         let paymentUrl: string | undefined
         if (isDoku && paymentSettings) {
             try {
-                const { createDokuCheckoutSession } = await import('@/lib/doku')
+                const { createDokuCheckoutSession, generateQrisString } = await import('@/lib/doku')
                 const callbackUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/orders/${order.id}`
                 
                 const dokuResult = await createDokuCheckoutSession({
@@ -286,11 +373,15 @@ export async function POST(req: Request) {
                 }
 
                 paymentUrl = dokuResult.url
+                const paymentQrContent = generateQrisString(secureTotal, order.id)
 
-                // Save the payment URL back to the order
+                // Save both payment URL and QRIS content back to the order
                 await prisma.order.update({
                     where: { id: order.id },
-                    data: { paymentUrl }
+                    data: { 
+                        paymentUrl,
+                        paymentQrContent
+                    }
                 })
             } catch (dokuError: any) {
                 console.error('[DOKU INITIALIZATION ERROR]', dokuError)

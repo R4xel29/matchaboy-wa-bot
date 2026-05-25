@@ -262,8 +262,17 @@ export default function PaymentSettingsClient() {
           </div>
         </div>
 
-        {/* DOKU Settings */}
-        <div className="bg-white rounded-2xl border border-border/40 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] lg:col-span-2">
+        {/* DOKU Settings — SEMENTARA DINONAKTIFKAN */}
+        <div className="bg-white rounded-2xl border border-border/40 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] lg:col-span-2 relative opacity-60 pointer-events-none select-none">
+          {/* Suspended Banner */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-auto">
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl px-6 py-4 shadow-lg text-center max-w-sm">
+              <p className="text-amber-800 font-bold text-sm mb-1">⚠️ Sementara Dinonaktifkan</p>
+              <p className="text-amber-700 text-[11px] leading-relaxed">
+                Pembayaran DOKU dinonaktifkan sementara karena proses izin yang belum selesai. Pengaturan akan diaktifkan kembali setelah izin beres.
+              </p>
+            </div>
+          </div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
@@ -274,12 +283,7 @@ export default function PaymentSettingsClient() {
                 <p className="text-[10px] text-muted-foreground">E-Wallet, QRIS, Virtual Account, & Kartu Kredit otomatis</p>
               </div>
             </div>
-            <button onClick={() => update('dokuEnabled', !settings?.dokuEnabled)}>
-              {settings?.dokuEnabled
-                ? <ToggleRight className="w-7 h-7 text-emerald-500" />
-                : <ToggleLeft className="w-7 h-7 text-muted-foreground/40" />
-              }
-            </button>
+            <ToggleLeft className="w-7 h-7 text-muted-foreground/40" />
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -290,9 +294,9 @@ export default function PaymentSettingsClient() {
                 <input
                   type="text"
                   value={settings?.dokuClientId || ''}
-                  onChange={(e) => update('dokuClientId', e.target.value)}
+                  disabled
                   placeholder="MALL-XXXXXXXX"
-                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-100 border border-border/40 rounded-xl text-gray-400 cursor-not-allowed"
                 />
               </div>
               <div>
@@ -302,29 +306,23 @@ export default function PaymentSettingsClient() {
                 <input
                   type="password"
                   value={settings?.dokuSharedKey || ''}
-                  onChange={(e) => update('dokuSharedKey', e.target.value)}
+                  disabled
                   placeholder="SK-XXXXXXXXXXXXXXXXXXXX"
-                  className="w-full px-3 py-2.5 text-sm bg-gray-50 border border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-100 border border-border/40 rounded-xl text-gray-400 cursor-not-allowed"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50/50 border border-indigo-100">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
               <input
                 type="checkbox"
                 id="dokuSandbox"
                 checked={settings?.dokuSandbox ?? true}
-                onChange={(e) => update('dokuSandbox', e.target.checked)}
-                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                disabled
+                className="w-4 h-4 text-gray-400 border-gray-300 rounded cursor-not-allowed"
               />
-              <label htmlFor="dokuSandbox" className="text-xs font-semibold text-indigo-900 cursor-pointer select-none">
+              <label htmlFor="dokuSandbox" className="text-xs font-semibold text-gray-400 cursor-not-allowed select-none">
                 Gunakan Mode Sandbox (Uji Coba / Development)
               </label>
-            </div>
-            <div className="text-[10px] text-muted-foreground leading-relaxed">
-              💡 <b>Informasi Integrasi Webhook:</b> Konfigurasikan URL Pemberitahuan (Webhook / Notify URL) Anda di DOKU Dashboard ke:<br />
-              <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[9px] select-all">
-                {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/doku-webhook` : 'https://[domain-anda]/api/payment/doku-webhook'}
-              </code>
             </div>
           </div>
         </div>

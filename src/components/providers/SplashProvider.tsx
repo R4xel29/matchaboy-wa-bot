@@ -1,8 +1,13 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { LoadingScreen } from '../ui/LoadingScreen';
+import dynamic from 'next/dynamic';
+
+// Lazy-load heavy animation components - only needed once per session
+const AnimatedSplash = dynamic(
+  () => import('./AnimatedSplash'),
+  { ssr: false }
+);
 
 interface SplashContextType {
   showSplash: boolean;
@@ -38,28 +43,9 @@ export function SplashProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SplashContext.Provider value={{ showSplash, triggerSplash }}>
-      {/* Ensure server-side markup matches exactly until mounted on client */}
-      {isMounted && (
-        <AnimatePresence mode="wait">
-          {showSplash && (
-            <motion.div
-              key="splash-screen"
-              initial={{ opacity: 1, y: 0 }}
-              exit={{ 
-                opacity: 0, 
-                y: '-100%',
-                filter: 'blur(20px)',
-                transition: { 
-                  duration: 0.65, 
-                  ease: [0.76, 0, 0.24, 1] // Custom luxury cubic-bezier
-                } 
-              }}
-              className="fixed inset-0 z-[9999] w-screen h-screen overflow-hidden"
-            >
-              <LoadingScreen isSplash={true} onFinished={handleSplashFinished} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Lazy-loaded splash - framer-motion only loads when splash is needed */}
+      {isMounted && showSplash && (
+        <AnimatedSplash showSplash={showSplash} onFinished={handleSplashFinished} />
       )}
       {children}
     </SplashContext.Provider>

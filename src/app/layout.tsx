@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display, Outfit } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { PermissionPrompt } from "@/components/ui/PermissionPrompt";
@@ -8,6 +8,18 @@ import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
 });
@@ -42,7 +54,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${inter.variable} ${playfair.variable} ${outfit.variable} antialiased`}
       >
         <AuthProvider>
           <ToastProvider>

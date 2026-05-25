@@ -54,12 +54,14 @@ export default function AdminOrdersClient({ initialOrders }: Props) {
   const getNextStatus = (status: string, orderType: string) => {
     if (orderType === 'DELIVERY') {
       const map: Record<string, string> = {
+        'PENDING': 'PREPARING',
         'PENDING_PAYMENT': 'PREPARING',
         'PREPARING': 'READY',
       };
       return map[status];
     } else {
       const map: Record<string, string> = {
+        'PENDING': 'PREPARING',
         'PENDING_PAYMENT': 'PREPARING',
         'PREPARING': 'READY',
         'READY': 'COMPLETED',
@@ -93,12 +95,18 @@ export default function AdminOrdersClient({ initialOrders }: Props) {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'DELIVERED': return 'bg-emerald-50 text-emerald-700';
-      case 'ON_DELIVERY': return 'bg-blue-50 text-blue-700';
-      case 'PICKED_UP': return 'bg-violet-50 text-violet-700';
-      case 'TO_STORE': return 'bg-cyan-50 text-cyan-700';
-      case 'ASSIGNED': return 'bg-amber-50 text-amber-700';
-      default: return 'bg-rose-50 text-rose-700';
+      case 'PENDING': return 'bg-orange-50 text-orange-700 border border-orange-100';
+      case 'PENDING_PAYMENT': return 'bg-rose-50 text-rose-700 border border-rose-100';
+      case 'PREPARING': return 'bg-sky-50 text-sky-700 border border-sky-100';
+      case 'READY': return 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+      case 'COMPLETED': return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+      case 'DELIVERED': return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+      case 'ON_DELIVERY': return 'bg-blue-50 text-blue-700 border border-blue-100';
+      case 'PICKED_UP': return 'bg-violet-50 text-violet-700 border border-violet-100';
+      case 'TO_STORE': return 'bg-cyan-50 text-cyan-700 border border-cyan-100';
+      case 'ASSIGNED': return 'bg-amber-50 text-amber-700 border border-amber-100';
+      case 'CANCELLED': return 'bg-gray-50 text-gray-500 border border-gray-100';
+      default: return 'bg-rose-50 text-rose-700 border border-rose-100';
     }
   };
 
@@ -114,11 +122,17 @@ export default function AdminOrdersClient({ initialOrders }: Props) {
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-2.5 text-sm bg-white border border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <option value="ALL">All Statuses</option>
+          <option value="PENDING_PAYMENT">Pending Payment</option>
+          <option value="PENDING">Pending</option>
+          <option value="PREPARING">Preparing</option>
+          <option value="READY">Ready</option>
           <option value="ASSIGNED">Assigned</option>
           <option value="TO_STORE">To Store</option>
           <option value="PICKED_UP">Picked Up</option>
           <option value="ON_DELIVERY">On Delivery</option>
           <option value="DELIVERED">Delivered</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
           className="px-3 py-2.5 text-sm bg-white border border-border/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">

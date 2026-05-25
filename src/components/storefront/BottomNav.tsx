@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Home, Search, Ticket, User, QrCode } from 'lucide-react';
+import { Home, BookOpen, Ticket, User, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStorefrontContext } from '@/app/(storefront)/layout';
 
@@ -15,14 +15,14 @@ export function BottomNav() {
 
   const navItems = [
     {
-      label: 'Home',
+      label: 'Beranda',
       icon: Home,
       href: '/',
       active: pathname === '/',
     },
     {
-      label: 'Search',
-      icon: Search,
+      label: 'Menu',
+      icon: BookOpen,
       onClick: openSearch,
       active: false,
     },
@@ -33,7 +33,7 @@ export function BottomNav() {
       active: pathname?.startsWith('/profile') && currentSection === 'loyalty' && searchParams.get('tab') === 'vouchers',
     },
     {
-      label: 'Profile',
+      label: 'Saya',
       icon: User,
       href: '/profile',
       active: pathname?.startsWith('/profile') && !currentSection,

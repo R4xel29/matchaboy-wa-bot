@@ -3,13 +3,15 @@
 import { useState, createContext, useContext, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { AppHeader } from '@/components/storefront/AppHeader';
-import { FloatingCart } from '@/components/storefront/FloatingCart';
 import { BottomNav } from '@/components/storefront/BottomNav';
-import { QROverlay } from '@/components/storefront/QROverlay';
-import { Loader2 } from 'lucide-react';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
-import { LoginBottomSheet } from '@/components/auth/LoginBottomSheet';
+
+// Lazy-load heavy components that are only visible on user interaction
+const FloatingCart = dynamic(() => import('@/components/storefront/FloatingCart').then(m => ({ default: m.FloatingCart })), { ssr: false });
+const QROverlay = dynamic(() => import('@/components/storefront/QROverlay').then(m => ({ default: m.QROverlay })), { ssr: false });
+const LoginBottomSheet = dynamic(() => import('@/components/auth/LoginBottomSheet').then(m => ({ default: m.LoginBottomSheet })), { ssr: false });
 
 // Context to pass search control down to page
 interface StorefrontContextType {

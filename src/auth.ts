@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { authConfig } from "./auth.config"
 import { cookies, headers } from "next/headers"
+import { parseUserAgent } from "./lib/ua-parser"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
@@ -282,9 +283,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.phone = (user as any).phone
                 token.name = (user as any).name
                 token.email = (user as any).email
+
+                // Generate a unique session token for tracking login device
+                const sessionToken = crypto.randomUUID()
+                token.sessionToken = sessionToken
+
+                // Create database session record with parsed UserAgent and IP address
+                try {
+                    const reqHeaders = await headers()
+                    const userAgent = reqHeaders.get("user-agent") || ""
+                    const ipAddress = reqHeaders.get("x-forwarded-for")?.split(',')[0] || reqHeaders.get("x-real-ip") || "127.0.0.1"
+                    
+                    const { deviceType, os, browser } = parseUserAgent(userAgent)
+
+                    await prisma.session.create({
+                        data: {
+                            sessionToken,
+                            userId: user.id,
+                            expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+                            userAgent,
+                            ipAddress,
+                            deviceType,
+                            browser,
+                            os
+                        }
+                    })
+                } catch (e) {
+                    console.error("[AUTH] Failed to create session record in database:", e)
+                }
             }
 
-            // For every request (or session check), verify user still exists and isn't banned
+            // For every request (or session check), verify user still exists, isn't banned, and session isn't revoked
             if (token.sub) {
                 try {
                     const dbUser = await prisma.user.findUnique({
@@ -305,6 +334,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         }
                     })
                     if (banned) return null
+
+                    // Verify database session exists and is active (Allows real-time session revocation)
+                    if (token.sessionToken) {
+                        const dbSession = await prisma.session.findUnique({
+                            where: { sessionToken: token.sessionToken as string }
+                        })
+                        if (!dbSession) {
+                            console.log(`[AUTH] Session ${token.sessionToken} has been revoked by admin or deleted. Forced logout.`)
+                            return null
+                        }
+
+                        // Await update lastActive (at most once every 15 minutes to prevent connection pool leaks)
+                        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000)
+                        if (!dbSession.lastActive || dbSession.lastActive < fifteenMinutesAgo) {
+                            try {
+                                await prisma.session.update({
+                                    where: { sessionToken: token.sessionToken as string },
+                                    data: { lastActive: new Date() }
+                                })
+                            } catch (err) {
+                                console.error("[AUTH] Failed to update session activity:", err)
+                            }
+                        }
+                    }
 
                     // Sync role, referralCode, and other profile details
                     token.role = dbUser.role
