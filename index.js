@@ -82,10 +82,13 @@ async function connectToWhatsApp() {
 
     // Menerima pesan masuk
     sock.ev.on('messages.upsert', async (m) => {
+        // Hanya proses pesan 'notify' (masuk baru), abaikan 'append' (sinkronisasi histori)
+        if (m.type !== 'notify') return;
+
         const msg = m.messages[0];
         console.log('[DEBUG_RAW_MSG]', JSON.stringify(msg, null, 2));
         
-        // Abaikan pesan dari diri sendiri
+        // Abaikan pesan dari diri sendiri atau pesan tanpa konten
         if (!msg.message || msg.key.fromMe) return;
 
         // Ambil isi teks pesan
@@ -140,29 +143,41 @@ async function connectToWhatsApp() {
 
             try {
                 // Panggil Webhook Next.js
+                // directReply: false → biarkan webhook mengirim balasan via WA_PROVIDER_URL (endpoint /send bot ini)
                 const response = await axios.post(webhookUrl, {
                     phone: senderNumber,
                     text: text,
                     jid: senderJid,
-                    directReply: true
-                });
-                console.log('[-] Berhasil meneruskan ke Next.js Webhook');
+                    directReply: false
+                }, { timeout: 15000 }); // timeout 15 detik agar tidak hang
 
-                // Jika webhook mengembalikan pesan balasan langsung, kirimkan langsung lewat koneksi bot ini
-                if (response.data && response.data.replyMessage) {
+                console.log('[-] Berhasil meneruskan ke Next.js Webhook. Response:', response.data?.message || 'OK');
+
+                // Fallback: jika webhook kembalikan replyMessage tapi belum sempat kirim (mis. network issue),
+                // kirim langsung via socket bot sebagai jaminan pesan tersampaikan
+                if (response.data && response.data.replyMessage && !response.data.sent) {
+                    console.log('[BOT] Mengirim fallback reply langsung via socket...');
                     await sock.sendMessage(senderJid, { text: response.data.replyMessage });
-                    console.log('[BOT] Berhasil mengirim pesan balasan langsung dari respon webhook.');
+                    console.log('[BOT] Fallback reply terkirim.');
                 }
             } catch (error) {
                 console.error('[!] Gagal memanggil Next.js Webhook:', error.message);
                 
-                // Jika respon error memiliki detail pesan balasan, teruskan ke user
+                // Jika respon error memiliki detail pesan balasan, kirim langsung via socket
                 if (error.response && error.response.data && error.response.data.replyMessage) {
                     try {
                         await sock.sendMessage(senderJid, { text: error.response.data.replyMessage });
+                        console.log('[BOT] Error reply terkirim ke user via socket.');
                     } catch (sendErr) {
                         console.error('[!] Gagal mengirim pesan error ke user:', sendErr.message);
                     }
+                } else {
+                    // Kirim pesan error generik agar user tidak bingung menunggu
+                    try {
+                        await sock.sendMessage(senderJid, {
+                            text: '⚠️ Maaf, sistem sedang sibuk. Silakan coba lagi dalam beberapa saat.'
+                        });
+                    } catch {}
                 }
             }
         }
