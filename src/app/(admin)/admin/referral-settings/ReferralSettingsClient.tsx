@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Share2, Users, Plus, Trash2, Save, Loader2, CheckCircle2,
   Target, Gift, Calendar, Award, ToggleLeft, ToggleRight,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 interface ReferralTier {
   id?: string;
@@ -443,6 +445,20 @@ export default function ReferralSettingsClient() {
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
       />
+      {/* Saving Loader Overlay Screen */}
+      <AnimatePresence>
+        {saving && (
+          <LoadingScreen 
+            fullScreen={true}
+            customMessages={[
+              "Menyimpan pengaturan referral...",
+              "Memperbarui data event referral...",
+              "Menyelaraskan reward tier...",
+              "Mohon tunggu sebentar..."
+            ]}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

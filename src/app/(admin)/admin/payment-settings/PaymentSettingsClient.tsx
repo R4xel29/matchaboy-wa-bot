@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard, QrCode, Banknote, MessageCircle,
   Save, Loader2, CheckCircle2, Plus, Trash2, Upload,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 interface PaymentConfig {
   id: string;
@@ -509,6 +511,20 @@ export default function PaymentSettingsClient() {
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
       />
+      {/* Saving Loader Overlay Screen */}
+      <AnimatePresence>
+        {saving && (
+          <LoadingScreen 
+            fullScreen={true}
+            customMessages={[
+              "Menyimpan pengaturan pembayaran...",
+              "Memperbarui kredensial gerbang pembayaran...",
+              "Menyelaraskan data bank...",
+              "Mohon tunggu sebentar..."
+            ]}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

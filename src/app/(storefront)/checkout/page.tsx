@@ -57,6 +57,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [showPickupWarning, setShowPickupWarning] = useState(false);
+  const [showTumblerWarning, setShowTumblerWarning] = useState(false);
 
   // Tumbler state
   const [hasTumbler, setHasTumbler] = useState(false);
@@ -101,7 +102,26 @@ export default function CheckoutPage() {
   // Modal State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [selectedVoucherDetail, setSelectedVoucherDetail] = useState<any | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null);
+
+  const voucherDetail = useMemo(() => {
+    if (!selectedVoucherDetail) return null;
+    const template = selectedVoucherDetail.template || selectedVoucherDetail;
+    return {
+      title: template.title || selectedVoucherDetail.title || 'Detail Voucher',
+      description: template.description || selectedVoucherDetail.description || '',
+      bannerImage: template.bannerImage || selectedVoucherDetail.bannerImage || null,
+      code: selectedVoucherDetail.code || template.code || '',
+      type: template.type || selectedVoucherDetail.type || '',
+      discountValue: template.discountValue || selectedVoucherDetail.discountValue || template.discountAmount || selectedVoucherDetail.discountAmount || 0,
+      minPurchase: template.minPurchase ?? selectedVoucherDetail.minPurchase ?? 0,
+      maxDiscount: template.maxDiscount ?? selectedVoucherDetail.maxDiscount ?? null,
+      expiresAt: selectedVoucherDetail.expiresAt || template.expiresAt || null,
+      terms: template.terms || selectedVoucherDetail.terms || '',
+    };
+  }, [selectedVoucherDetail]);
 
   // Store settings
   const [storeSettings, setStoreSettings] = useState({
@@ -381,16 +401,22 @@ export default function CheckoutPage() {
   const voucherDiscount = useMemo(() => {
     if (!appliedVoucher) return 0;
     if (appliedVoucher.type === 'GRATIS_ONGKIR' || appliedVoucher.type === 'DISKON_ONGKIR') return 0;
-    if (appliedVoucher.discountAmount !== undefined && appliedVoucher.discountAmount !== null) {
+    
+    // Resolve discount value from either discountAmount or template.discountValue
+    const discountVal = (appliedVoucher.discountAmount !== undefined && appliedVoucher.discountAmount !== null && appliedVoucher.discountAmount > 0)
+      ? appliedVoucher.discountAmount
+      : (appliedVoucher as any).template?.discountValue || (appliedVoucher as any).discountValue || 0;
+
+    if (discountVal > 0) {
       if (appliedVoucher.type === 'DISCOUNT_PCT') {
-        const rawDiscount = Math.round((subtotal * appliedVoucher.discountAmount) / 100);
-        const maxDiscount = appliedVoucher.maxDiscount ?? appliedVoucher.template?.maxDiscount;
+        const rawDiscount = Math.round((subtotal * discountVal) / 100);
+        const maxDiscount = appliedVoucher.maxDiscount ?? (appliedVoucher as any).template?.maxDiscount;
         if (maxDiscount && maxDiscount > 0) {
           return Math.min(rawDiscount, maxDiscount);
         }
         return rawDiscount;
       }
-      return appliedVoucher.discountAmount;
+      return discountVal;
     }
     switch (appliedVoucher.type) {
       case 'FREE_DRINK': return 25000;
@@ -698,6 +724,36 @@ export default function CheckoutPage() {
         )}
       </AnimatePresence>
 
+      {/* Tumbler Warning Modal */}
+      <AnimatePresence>
+        {showTumblerWarning && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-sm rounded-[2rem] bg-white p-7 shadow-2xl border border-gray-100"
+            >
+              <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100/60 flex items-center justify-center">
+                <Leaf className="w-7 h-7 text-emerald-600 animate-pulse" />
+              </div>
+              <h3 className="text-center font-serif text-lg font-bold text-gray-950 mb-2">Bawa Tumbler Sendiri</h3>
+              <p className="text-center text-xs text-gray-500 mb-6 leading-relaxed">
+                Pastikan Anda <strong>betul-betul membawa tumbler sendiri</strong> dengan ukuran yang cukup besar (disarankan ukuran Large/besar) saat mengambil pesanan di gerai Matchaboy. 🌿
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowTumblerWarning(false)}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white font-bold text-sm shadow-md shadow-emerald-600/10"
+              >
+                Saya Mengerti
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#FFFBF5]/90 backdrop-blur-md border-b border-gray-100">
         <div className="flex items-center gap-4 px-6 py-4 max-w-6xl mx-auto">
@@ -887,7 +943,13 @@ export default function CheckoutPage() {
             <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <button
                 type="button"
-                onClick={() => setHasTumbler(!hasTumbler)}
+                onClick={() => {
+                  const newVal = !hasTumbler;
+                  setHasTumbler(newVal);
+                  if (newVal) {
+                    setShowTumblerWarning(true);
+                  }
+                }}
                 className={`w-full relative overflow-hidden rounded-[2rem] border-2 p-5 transition-all duration-300 text-left active:scale-[0.98] ${
                   hasTumbler
                     ? 'border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 shadow-md shadow-emerald-100/50'
@@ -993,7 +1055,7 @@ export default function CheckoutPage() {
             
             <button
               type="button"
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/?openMenu=true')}
               className="w-full py-4 rounded-2xl border-2 border-dashed border-[#B48A5E]/20 text-[#B48A5E] font-bold text-xs hover:bg-[#B48A5E]/5 hover:border-[#B48A5E]/40 transition-all text-center flex items-center justify-center gap-2"
             >
               + Tambah Menu Lain
@@ -1276,6 +1338,111 @@ export default function CheckoutPage() {
         initialData={editingCartItem || undefined}
         allProducts={allProducts}
       />
+
+      {/* Voucher Detail Modal */}
+      <AnimatePresence>
+        {isDetailModalOpen && voucherDetail && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[85vh] select-none"
+            >
+              {/* Image Banner */}
+              <div className="relative h-48 w-full bg-gray-100 shrink-0 flex items-center justify-center border-b border-gray-100">
+                {voucherDetail.bannerImage ? (
+                  <Image 
+                    src={voucherDetail.bannerImage} 
+                    alt={voucherDetail.title} 
+                    fill 
+                    className="object-cover"
+                    sizes="400px"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <Ticket className="w-12 h-12 stroke-1 text-[#B48A5E]" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Matchaboy Promo</span>
+                  </div>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md text-white font-extrabold text-[10px] tracking-wide uppercase">
+                  {voucherDetail.type === 'DISCOUNT_PCT' 
+                    ? `Potongan ${voucherDetail.discountValue}%` 
+                    : `Potongan ${formatRupiah(voucherDetail.discountValue)}`}
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-mono text-xs font-black text-amber-800 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded">
+                      {voucherDetail.code}
+                    </span>
+                  </div>
+                  <h3 className="font-serif font-black text-lg text-gray-900 leading-snug">{voucherDetail.title}</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed mt-1">{voucherDetail.description}</p>
+                </div>
+
+                <div className="border-t border-gray-100 pt-3 space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-450 font-medium">Minimal Belanja</span>
+                    <span className="font-bold text-gray-800">{formatRupiah(voucherDetail.minPurchase)}</span>
+                  </div>
+                  {voucherDetail.type === 'DISCOUNT_PCT' && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-450 font-medium">Maksimal Diskon</span>
+                      <span className="font-bold text-red-600">
+                        {voucherDetail.maxDiscount ? formatRupiah(voucherDetail.maxDiscount) : 'Tanpa Batas'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-450 font-medium">Berlaku Hingga</span>
+                    <span className="font-bold text-gray-800">
+                      {voucherDetail.expiresAt 
+                        ? new Date(voucherDetail.expiresAt).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) 
+                        : 'Selamanya'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* S&K */}
+                {voucherDetail.terms && (
+                  <div className="bg-[#FFFBF5] rounded-2xl p-4 border border-[#EADFC9]/30 space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-450">Syarat & Ketentuan</h4>
+                    <ul className="list-disc pl-4 space-y-1 text-xs text-gray-650 font-medium leading-relaxed">
+                      {voucherDetail.terms.split('\n').filter((t: string) => t.trim().length > 0).map((term: string, idx: number) => (
+                        <li key={idx}>{term}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Close Action */}
+              <div className="p-6 border-t border-gray-50 bg-gray-50/50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="w-full py-3.5 bg-[#B48A5E] hover:bg-[#946F48] text-white font-bold rounded-2xl text-xs shadow-md shadow-[#B48A5E]/10 transition-all text-center cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Toast Notification */}
       <AnimatePresence>
@@ -1638,11 +1805,11 @@ export default function CheckoutPage() {
                                 <div className="absolute right-0 top-[70%] translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#FFFBF5] border-l border-emerald-150 z-10" />
                                 
                                 <div className="pb-3.5 border-b border-dashed border-gray-150 flex items-start justify-between gap-4">
-                                  <div className="space-y-1">
+                                  <div className="space-y-1 flex-1 min-w-0">
                                     <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50">
                                       {v.type}
                                     </span>
-                                    <h4 className="font-serif font-black text-base text-gray-900 leading-snug">{v.description}</h4>
+                                    <h4 className="font-serif font-black text-base text-gray-900 leading-snug truncate">{v.description}</h4>
                                     <div className="flex flex-wrap gap-2 mt-1">
                                       <span className="text-[10px] font-bold text-gray-500">
                                         Min. Belanja: {formatRupiah(v.template?.minPurchase || v.minPurchase || 0)}
@@ -1655,21 +1822,37 @@ export default function CheckoutPage() {
                                     </div>
                                     <p className="text-[11px] text-gray-400 mt-1">Kode: {v.code}</p>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setAppliedVoucher(v);
-                                      setIsVoucherModalOpen(false);
-                                      setToast({ message: 'Voucher berhasil diterapkan!', type: 'success' });
-                                    }}
-                                    className="px-4 py-2 bg-[#B48A5E] text-white rounded-xl font-bold text-xs hover:bg-[#946F48] transition-all shrink-0"
-                                  >
-                                    Gunakan
-                                  </button>
+                                  <div className="flex flex-col items-end gap-2.5 shrink-0">
+                                    {v.template?.bannerImage && (
+                                      <div className="relative w-16 h-12 rounded-xl overflow-hidden border border-gray-100">
+                                        <Image src={v.template.bannerImage} alt={v.description} fill className="object-cover" sizes="64px" />
+                                      </div>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setAppliedVoucher(v);
+                                        setIsVoucherModalOpen(false);
+                                        setToast({ message: 'Voucher berhasil diterapkan!', type: 'success' });
+                                      }}
+                                      className="px-4 py-2 bg-[#B48A5E] text-white rounded-xl font-bold text-xs hover:bg-[#946F48] transition-all"
+                                    >
+                                      Gunakan
+                                    </button>
+                                  </div>
                                 </div>
                                 <div className="pt-3 flex justify-between items-center text-[11px] text-gray-400">
                                   <span>Berlaku hingga {v.expiresAt ? new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Selamanya'}</span>
-                                  <span className="text-[#B48A5E] font-bold hover:underline cursor-pointer">Detail</span>
+                                  <span 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedVoucherDetail(v.template || v);
+                                      setIsDetailModalOpen(true);
+                                    }}
+                                    className="text-[#B48A5E] font-bold hover:underline cursor-pointer"
+                                  >
+                                    Detail
+                                  </span>
                                 </div>
                               </div>
                             ))}
@@ -1693,26 +1876,43 @@ export default function CheckoutPage() {
                                 <div className="absolute right-0 top-[70%] translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#FFFBF5] border-l border-gray-250 z-10" />
                                 
                                 <div className="pb-3.5 border-b border-dashed border-gray-150 flex items-start justify-between gap-4">
-                                  <div className="space-y-1">
+                                  <div className="space-y-1 flex-1 min-w-0">
                                     <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100">
                                       {v.type}
                                     </span>
-                                    <h4 className="font-serif font-black text-base text-gray-700 leading-snug">{v.description}</h4>
+                                    <h4 className="font-serif font-black text-base text-gray-700 leading-snug truncate">{v.description}</h4>
                                     <p className="text-[11px] text-red-500 font-bold">Min. Belanja {formatRupiah(v.template?.minPurchase || v.minPurchase || 0)}</p>
                                     {(v.type === 'DISCOUNT_PCT' || v.template?.type === 'DISCOUNT_PCT') && (v.maxDiscount || v.template?.maxDiscount) && (
                                       <p className="text-[10px] font-bold text-gray-400">
                                         Maks. Potongan: {formatRupiah(v.maxDiscount || v.template?.maxDiscount || 0)}
                                       </p>
                                     )}
-                                    <p className="text-[11px] text-gray-400">Kode: {v.code}</p>
+                                    <p className="text-[11px] text-gray-450 mt-0.5">Kode: {v.code}</p>
                                   </div>
-                                  <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-150 flex items-center justify-center text-gray-400 shrink-0">
-                                    <Ticket className="w-5.5 h-5.5" />
+                                  <div className="flex flex-col items-end gap-2.5 shrink-0">
+                                    {v.template?.bannerImage ? (
+                                      <div className="relative w-16 h-12 rounded-xl overflow-hidden border border-gray-100">
+                                        <Image src={v.template.bannerImage} alt={v.description} fill className="object-cover" sizes="64px" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-150 flex items-center justify-center text-gray-400">
+                                        <Ticket className="w-5.5 h-5.5" />
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="pt-3 flex justify-between items-center text-[11px] text-gray-400">
                                   <span>Berlaku hingga {v.expiresAt ? new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Selamanya'}</span>
-                                  <span className="text-blue-500 font-bold hover:underline cursor-pointer">Detail</span>
+                                  <span 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedVoucherDetail(v.template || v);
+                                      setIsDetailModalOpen(true);
+                                    }}
+                                    className="text-[#B48A5E] font-bold hover:underline cursor-pointer"
+                                  >
+                                    Detail
+                                  </span>
                                 </div>
                               </div>
                             ))}
@@ -1738,39 +1938,55 @@ export default function CheckoutPage() {
                           <div className="absolute right-0 top-[70%] translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#FFFBF5] border-l border-amber-100 z-10" />
                           
                           <div className="pb-3.5 border-b border-dashed border-gray-150 flex items-start justify-between gap-4">
-                            <div className="space-y-1">
+                            <div className="space-y-1 flex-1 min-w-0">
                               <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50">
                                 {t.type}
                               </span>
-                              <h4 className="font-serif font-black text-base text-gray-900 leading-snug">{t.title}</h4>
-                              <p className="text-[11px] text-gray-500 leading-relaxed">{t.description}</p>
+                              <h4 className="font-serif font-black text-base text-gray-900 leading-snug truncate">{t.title}</h4>
+                              <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{t.description}</p>
                               <p className="text-[10px] text-[#B48A5E] font-bold mt-1">Kode: {t.code}</p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  const res = await fetch('/api/user/vouchers/claim', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ code: t.code })
-                                  });
-                                  const d = await res.json();
-                                  if (!res.ok) throw new Error(d.error);
-                                  setToast({ message: 'Voucher berhasil diklaim!', type: 'success' });
-                                  fetchVouchers();
-                                } catch (err: any) {
-                                  setToast({ message: err.message || 'Gagal mengklaim voucher', type: 'error' });
-                                }
-                              }}
-                              className="px-4.5 py-2 border-2 border-[#B48A5E] text-[#B48A5E] hover:bg-[#B48A5E] hover:text-white rounded-xl font-bold text-xs transition-all shrink-0"
-                            >
-                              Klaim
-                            </button>
+                            <div className="flex flex-col items-end gap-2.5 shrink-0">
+                              {t.bannerImage && (
+                                <div className="relative w-16 h-12 rounded-xl overflow-hidden border border-gray-100">
+                                  <Image src={t.bannerImage} alt={t.title} fill className="object-cover" sizes="64px" />
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    const res = await fetch('/api/user/vouchers/claim', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ code: t.code })
+                                    });
+                                    const d = await res.json();
+                                    if (!res.ok) throw new Error(d.error);
+                                    setToast({ message: 'Voucher berhasil diklaim!', type: 'success' });
+                                    fetchVouchers();
+                                  } catch (err: any) {
+                                    setToast({ message: err.message || 'Gagal mengklaim voucher', type: 'error' });
+                                  }
+                                }}
+                                className="px-4.5 py-2 border-2 border-[#B48A5E] text-[#B48A5E] hover:bg-[#B48A5E] hover:text-white rounded-xl font-bold text-xs transition-all"
+                              >
+                                Klaim
+                              </button>
+                            </div>
                           </div>
                           <div className="pt-3 flex justify-between items-center text-[11px] text-gray-400">
                             <span>Masa Berlaku hingga {t.expiresAt ? new Date(t.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '30 Hari'}</span>
-                            <span className="text-[#B48A5E] font-bold hover:underline cursor-pointer">Detail</span>
+                            <span 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedVoucherDetail(t);
+                                setIsDetailModalOpen(true);
+                              }}
+                              className="text-[#B48A5E] font-bold hover:underline cursor-pointer"
+                            >
+                              Detail
+                            </span>
                           </div>
                         </div>
                       ))}

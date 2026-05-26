@@ -77,6 +77,18 @@ export default function StorefrontClient({
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('openMenu') === 'true') {
+        setSearchOpen(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('openMenu');
+        window.history.replaceState({}, '', url.pathname + url.search);
+      }
+    }
+  }, [setSearchOpen]);
+
+  useEffect(() => {
     if (status === 'authenticated' && !loyaltyFetchedRef.current) {
       loyaltyFetchedRef.current = true;
       fetch('/api/user/loyalty')

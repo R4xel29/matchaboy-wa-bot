@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Save, Loader2, Store, MapPin, LocateFixed } from 'lucide-react';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import type L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -280,6 +281,21 @@ export default function StoreSettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Saving Loader Overlay Screen */}
+      <AnimatePresence>
+        {saving && (
+          <LoadingScreen 
+            fullScreen={true}
+            customMessages={[
+              "Menyimpan pengaturan toko...",
+              "Memperbarui jam operasional...",
+              "Menyelaraskan tarif pengiriman...",
+              "Mohon tunggu sebentar..."
+            ]}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

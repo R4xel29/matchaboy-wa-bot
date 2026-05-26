@@ -2637,15 +2637,40 @@ function LoyaltySection({ user, milestones }: { user: UserShape; milestones: Mil
   );
 }
 
-function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
+function VouchersSection({ vouchers: initialVouchers = [] }: { vouchers?: VoucherShape[] }) {
   const router = useRouter();
+  const [vouchers, setVouchers] = useState<VoucherShape[]>(initialVouchers);
+  const [claimableTemplates, setClaimableTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [claimCode, setClaimCode] = useState('');
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [claimSuccess, setClaimSuccess] = useState('');
   
+  // Main Voucher Tabs: 'my-vouchers' | 'voucher-pack'
+  const [activeTab, setActiveTab] = useState<'my-vouchers' | 'voucher-pack'>('my-vouchers');
+
   // Tab Filter States: 'AVAILABLE' | 'USED' | 'EXPIRED'
   const [filter, setFilter] = useState<'AVAILABLE' | 'USED' | 'EXPIRED'>('AVAILABLE');
+
+  const fetchVouchers = async () => {
+    try {
+      const res = await fetch('/api/user/vouchers');
+      if (res.ok) {
+        const data = await res.json();
+        setVouchers(data.vouchers || []);
+        setClaimableTemplates(data.templates || []);
+      }
+    } catch (e) {
+      console.error('Error fetching vouchers:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVouchers();
+  }, []);
 
   const getVoucherIcon = (type: string) => {
     switch (type) {
@@ -2659,9 +2684,8 @@ function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
     }
   };
 
-  const handleClaim = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!claimCode.trim()) return;
+  const handleClaim = async (codeToClaim: string) => {
+    if (!codeToClaim.trim()) return;
 
     setClaiming(true);
     setClaimError('');
@@ -2671,7 +2695,7 @@ function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
       const res = await fetch('/api/user/vouchers/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: claimCode })
+        body: JSON.stringify({ code: codeToClaim })
       });
       const data = await res.json();
 
@@ -2680,7 +2704,8 @@ function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
       } else {
         setClaimSuccess(data.message || 'Voucher berhasil diklaim!');
         setClaimCode('');
-        router.refresh(); // Refresh to pull updated vouchers
+        fetchVouchers(); // refetch to update both lists
+        router.refresh(); // Refresh parent route context if needed
       }
     } catch (err) {
       setClaimError('Terjadi kesalahan jaringan');
@@ -2710,148 +2735,229 @@ function VouchersSection({ vouchers }: { vouchers: VoucherShape[] }) {
       exit={{ opacity: 0, y: 20 }}
       className="space-y-6"
     >
-      {/* Input Klaim Voucher */}
-      <div className="bg-white/80 border border-[#D4A574]/15 shadow-sm rounded-3xl p-5 space-y-4">
-        <h3 className="font-serif text-sm font-bold text-gray-800 flex items-center gap-2">
-          🎟️ Punya Kode Voucher?
-        </h3>
-        <form onSubmit={handleClaim} className="flex gap-2">
-          <input
-            type="text"
-            value={claimCode}
-            onChange={(e) => setClaimCode(e.target.value)}
-            placeholder="Contoh: MATCHABOYBARU"
-            className="flex-1 px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E]/60 outline-none text-sm font-bold uppercase placeholder:normal-case placeholder:font-medium placeholder:text-gray-400 transition-all shadow-inner"
-            disabled={claiming}
-          />
-          <button
-            type="submit"
-            disabled={claiming || !claimCode.trim()}
-            className="px-6 py-3.5 bg-[#B48A5E] hover:bg-[#946F48] disabled:bg-gray-100 disabled:text-gray-400 text-white font-black rounded-2xl transition-all flex items-center justify-center shrink-0 text-sm shadow-md shadow-[#B48A5E]/10"
-          >
-            {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Klaim'}
-          </button>
-        </form>
-
-        {claimError && (
-          <p className="text-xs text-red-500 font-bold px-1">{claimError}</p>
-        )}
-        {claimSuccess && (
-          <p className="text-xs text-emerald-600 font-bold px-1">{claimSuccess}</p>
-        )}
-      </div>
-
-      {/* Pill Filter Tabs */}
-      <div className="flex gap-1.5 p-1.5 bg-[#FFFBF5]/85 border border-[#D4A574]/15 rounded-2xl shadow-inner">
+      {/* Main Tabs: Voucher Saya vs Voucher Pack */}
+      <div className="flex border-b border-gray-100 bg-white/40 rounded-t-3xl p-1">
         <button
-          onClick={() => setFilter('AVAILABLE')}
-          className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
-            filter === 'AVAILABLE'
-              ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
-              : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+          onClick={() => setActiveTab('my-vouchers')}
+          className={`flex-1 py-3 text-xs font-black rounded-2xl transition-all ${
+            activeTab === 'my-vouchers'
+              ? 'bg-[#B48A5E] text-white shadow-md'
+              : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          Tersedia ({vouchers.filter(v => !v.isUsed && (!v.expiresAt || new Date(v.expiresAt) >= now)).length})
+          Voucher Saya
         </button>
         <button
-          onClick={() => setFilter('USED')}
-          className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
-            filter === 'USED'
-              ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
-              : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+          onClick={() => setActiveTab('voucher-pack')}
+          className={`flex-1 py-3 text-xs font-black rounded-2xl transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'voucher-pack'
+              ? 'bg-[#B48A5E] text-white shadow-md'
+              : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          Terpakai ({vouchers.filter(v => v.isUsed).length})
-        </button>
-        <button
-          onClick={() => setFilter('EXPIRED')}
-          className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
-            filter === 'EXPIRED'
-              ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
-              : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
-          }`}
-        >
-          Kedaluwarsa ({vouchers.filter(v => !v.isUsed && v.expiresAt && new Date(v.expiresAt) < now).length})
+          <Gift className="w-4 h-4" />
+          Voucher Pack
         </button>
       </div>
 
-      {/* Active Vouchers List */}
-      <div className="space-y-3">
-        {filteredVouchers.length === 0 ? (
-          <div className="text-center py-12 px-6 bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm">
-            <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h4 className="font-serif text-base text-gray-800 mb-1 font-bold">
-              {filter === 'AVAILABLE' ? 'Belum Ada Voucher Aktif' : filter === 'USED' ? 'Belum Ada Voucher Terpakai' : 'Belum Ada Voucher Kedaluwarsa'}
-            </h4>
-            <p className="text-[12px] text-gray-500 max-w-xs mx-auto leading-relaxed font-semibold">
-              {filter === 'AVAILABLE'
-                ? 'Kumpulkan poin pesanan Anda atau klaim kode promo di atas untuk mendapatkan voucher!'
-                : 'Voucher yang telah sukses digunakan untuk transaksi akan tercantum di sini.'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3.5">
-            {filteredVouchers.map((v, i) => (
-              <motion.div
-                key={v.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-                onClick={() => filter === 'AVAILABLE' && router.push(`/vouchers/${v.id}`)}
-                className={`ticket-card rounded-2xl border border-[#D4A574]/20 shadow-sm overflow-hidden flex items-stretch transition-all relative min-h-[105px] ${
-                  filter === 'AVAILABLE' ? 'cursor-pointer hover:border-[#B48A5E]/40 hover:shadow-md active:scale-[0.99] group' : 'opacity-70'
-                }`}
+      {activeTab === 'my-vouchers' ? (
+        <div className="space-y-6">
+          {/* Input Klaim Voucher */}
+          <div className="bg-white/80 border border-[#D4A574]/15 shadow-sm rounded-3xl p-5 space-y-4">
+            <h3 className="font-serif text-sm font-bold text-gray-800 flex items-center gap-2">
+              🎟️ Punya Kode Voucher?
+            </h3>
+            <form onSubmit={(e) => { e.preventDefault(); handleClaim(claimCode); }} className="flex gap-2">
+              <input
+                type="text"
+                value={claimCode}
+                onChange={(e) => setClaimCode(e.target.value)}
+                placeholder="Contoh: MATCHABOYBARU"
+                className="flex-1 px-4 py-3.5 bg-[#FFFBF5] border border-[#D4A574]/20 rounded-2xl focus:bg-white focus:border-[#B48A5E]/60 outline-none text-sm font-bold uppercase placeholder:normal-case placeholder:font-medium placeholder:text-gray-400 transition-all shadow-inner"
+                disabled={claiming}
+              />
+              <button
+                type="submit"
+                disabled={claiming || !claimCode.trim()}
+                className="px-6 py-3.5 bg-[#B48A5E] hover:bg-[#946F48] disabled:bg-gray-100 disabled:text-gray-400 text-white font-black rounded-2xl transition-all flex items-center justify-center shrink-0 text-sm shadow-md shadow-[#B48A5E]/10"
               >
-                {/* Punch Holes exactly at the division line between stub and body */}
-                {/* Since stub is w-14, division is at 56px */}
-                <div className="absolute left-[52px] -top-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
-                <div className="absolute left-[52px] -bottom-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
+                {claiming ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Klaim'}
+              </button>
+            </form>
 
-                {/* Left Side Tab Decorator (Stub) */}
-                <div className="w-14 bg-gradient-to-br from-[#1E3F20] to-[#2E5A44] flex flex-col items-center justify-center text-2xl border-r border-dashed border-[#D4A574]/30 relative shrink-0 text-[#D4A574]">
-                  {getVoucherIcon(v.type)}
-                </div>
-                
-                {/* Right Side Main Details */}
-                <div className="flex-1 p-4 pl-5 relative overflow-hidden flex flex-col justify-between">
-                  {/* Subtle Tea Leaf Watermark */}
-                  <Coffee className="absolute right-2 -bottom-4 w-20 h-20 text-[#2E5A44] opacity-[0.03] pointer-events-none rotate-12" />
-                  
-                  <div>
-                    <h4 className="text-[14px] font-black text-gray-900 leading-snug">{v.description}</h4>
-                    <span className="text-[9px] font-mono font-bold text-[#B48A5E] bg-[#B48A5E]/5 px-2 py-0.5 rounded border border-[#B48A5E]/15 mt-1.5 inline-block uppercase">
-                      Kode: {v.code.slice(0, 8).toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  {v.expiresAt && (
-                    <p className={`text-[10px] font-semibold mt-2 ${filter === 'AVAILABLE' ? 'text-amber-600' : 'text-gray-400'}`}>
-                      Berlaku s/d {new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                  )}
-                </div>
-
-                {/* Rightmost Action Label/Badge */}
-                <div className="flex flex-col items-center justify-center px-4 border-l border-gray-50 bg-[#FFFBF5]/35 shrink-0 select-none">
-                  {filter === 'AVAILABLE' ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#B48A5E] to-[#D4A574] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm group-hover:from-[#946F48] group-hover:to-[#B48A5E] transition-all">
-                      Gunakan
-                    </span>
-                  ) : filter === 'USED' ? (
-                    <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
-                      Terpakai
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full bg-red-50 text-red-400 text-[10px] font-bold uppercase tracking-wider">
-                      Hangus
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+            {claimError && (
+              <p className="text-xs text-red-500 font-bold px-1">{claimError}</p>
+            )}
+            {claimSuccess && (
+              <p className="text-xs text-emerald-600 font-bold px-1">{claimSuccess}</p>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* Pill Filter Tabs */}
+          <div className="flex gap-1.5 p-1.5 bg-[#FFFBF5]/85 border border-[#D4A574]/15 rounded-2xl shadow-inner">
+            <button
+              onClick={() => setFilter('AVAILABLE')}
+              className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
+                filter === 'AVAILABLE'
+                  ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
+                  : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+              }`}
+            >
+              Tersedia ({vouchers.filter(v => !v.isUsed && (!v.expiresAt || new Date(v.expiresAt) >= now)).length})
+            </button>
+            <button
+              onClick={() => setFilter('USED')}
+              className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
+                filter === 'USED'
+                  ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
+                  : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+              }`}
+            >
+              Terpakai ({vouchers.filter(v => v.isUsed).length})
+            </button>
+            <button
+              onClick={() => setFilter('EXPIRED')}
+              className={`flex-1 py-2.5 text-center text-xs rounded-xl transition-all ${
+                filter === 'EXPIRED'
+                  ? 'bg-gradient-to-br from-[#B48A5E] to-[#946F48] text-white shadow-md font-black'
+                  : 'text-gray-500 hover:text-gray-800 font-bold hover:bg-white/40'
+              }`}
+            >
+              Kedaluwarsa ({vouchers.filter(v => !v.isUsed && v.expiresAt && new Date(v.expiresAt) < now).length})
+            </button>
+          </div>
+
+          {/* Active Vouchers List */}
+          <div className="space-y-3">
+            {filteredVouchers.length === 0 ? (
+              <div className="text-center py-12 px-6 bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm">
+                <Gift className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <h4 className="font-serif text-base text-gray-800 mb-1 font-bold">
+                  {filter === 'AVAILABLE' ? 'Belum Ada Voucher Aktif' : filter === 'USED' ? 'Belum Ada Voucher Terpakai' : 'Belum Ada Voucher Kedaluwarsa'}
+                </h4>
+                <p className="text-[12px] text-gray-500 max-w-xs mx-auto leading-relaxed font-semibold">
+                  {filter === 'AVAILABLE'
+                    ? 'Kumpulkan poin pesanan Anda atau klaim kode promo di atas untuk mendapatkan voucher!'
+                    : 'Voucher yang telah sukses digunakan untuk transaksi akan tercantum di sini.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {filteredVouchers.map((v, i) => (
+                  <motion.div
+                    key={v.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => filter === 'AVAILABLE' && router.push(`/vouchers/${v.id}`)}
+                    className={`ticket-card rounded-2xl border border-[#D4A574]/20 shadow-sm overflow-hidden flex items-stretch transition-all relative min-h-[105px] ${
+                      filter === 'AVAILABLE' ? 'cursor-pointer hover:border-[#B48A5E]/40 hover:shadow-md active:scale-[0.99] group' : 'opacity-70'
+                    }`}
+                  >
+                    {/* Punch Holes */}
+                    <div className="absolute left-[52px] -top-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
+                    <div className="absolute left-[52px] -bottom-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
+
+                    {/* Left Stub */}
+                    <div className="w-14 bg-gradient-to-br from-[#1E3F20] to-[#2E5A44] flex flex-col items-center justify-center text-2xl border-r border-dashed border-[#D4A574]/30 relative shrink-0 text-[#D4A574]">
+                      {getVoucherIcon(v.type)}
+                    </div>
+                    
+                    {/* Details */}
+                    <div className="flex-1 p-4 pl-5 relative overflow-hidden flex flex-col justify-between">
+                      <Coffee className="absolute right-2 -bottom-4 w-20 h-20 text-[#2E5A44] opacity-[0.03] pointer-events-none rotate-12" />
+                      
+                      <div>
+                        <h4 className="text-[14px] font-black text-gray-900 leading-snug">{v.description}</h4>
+                        <span className="text-[9px] font-mono font-bold text-[#B48A5E] bg-[#B48A5E]/5 px-2 py-0.5 rounded border border-[#B48A5E]/15 mt-1.5 inline-block uppercase">
+                          Kode: {v.code.slice(0, 8).toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      {v.expiresAt && (
+                        <p className={`text-[10px] font-semibold mt-2 ${filter === 'AVAILABLE' ? 'text-amber-600' : 'text-gray-400'}`}>
+                          Berlaku s/d {new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Badge */}
+                    <div className="flex flex-col items-center justify-center px-4 border-l border-gray-50 bg-[#FFFBF5]/35 shrink-0 select-none">
+                      {filter === 'AVAILABLE' ? (
+                        <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#B48A5E] to-[#D4A574] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm group-hover:from-[#946F48] group-hover:to-[#B48A5E] transition-all">
+                          Gunakan
+                        </span>
+                      ) : filter === 'USED' ? (
+                        <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
+                          Terpakai
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full bg-red-50 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                          Hangus
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Voucher Pack (Templates list) */
+        <div className="space-y-4">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-[#B48A5E]" />
+            </div>
+          ) : claimableTemplates.length === 0 ? (
+            <div className="text-center py-12 px-6 bg-white rounded-3xl border border-[#D4A574]/15 shadow-sm">
+              <Gift className="w-12 h-12 text-[#B48A5E] mx-auto mb-3" />
+              <h4 className="font-serif text-base text-gray-800 mb-1 font-bold">Tidak Ada Voucher Pack</h4>
+              <p className="text-sm text-[#A69F94] font-medium leading-relaxed">Saat ini semua voucher pack yang tersedia telah Anda klaim.</p>
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {claimableTemplates.map((t, i) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="relative border border-dashed border-[#B48A5E]/30 rounded-2xl bg-white p-5 shadow-sm overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="absolute left-[-8px] top-[70%] -translate-y-1/2 w-4 h-4 rounded-full bg-[#FFFBF7] border-r border-[#B48A5E]/20 z-10" />
+                  <div className="absolute right-[-8px] top-[70%] -translate-y-1/2 w-4 h-4 rounded-full bg-[#FFFBF7] border-l border-[#B48A5E]/20 z-10" />
+
+                  <div className="pb-3.5 border-b border-dashed border-gray-150 flex items-start justify-between gap-4">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-[#B48A5E] bg-[#B48A5E]/5">
+                        {t.type}
+                      </span>
+                      <h4 className="font-serif font-black text-base text-gray-900 leading-snug truncate">{t.title}</h4>
+                      <p className="text-xs text-gray-500 line-clamp-1">{t.description}</p>
+                      <p className="text-[11px] text-[#B48A5E] font-bold">Min. Belanja {formatRupiah(t.minPurchase)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleClaim(t.code)}
+                        disabled={claiming}
+                        className="px-4 py-2 bg-[#B48A5E] text-white rounded-xl font-bold text-xs hover:bg-[#946F48] transition-all disabled:opacity-50"
+                      >
+                        {claiming ? 'Loading' : 'Klaim'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pt-3 flex justify-between items-center text-[11px] text-gray-400">
+                    <span>Masa Berlaku hingga {t.expiresAt ? new Date(t.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '30 Hari'}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </motion.section>
   );
 }

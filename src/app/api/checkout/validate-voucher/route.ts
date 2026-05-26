@@ -16,17 +16,124 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Kode voucher kosong' }, { status: 400 })
         }
 
-        const voucher = await prisma.voucher.findUnique({
-            where: { code },
+        const cleanCode = code.trim().toUpperCase()
+
+        // 1. Check if the user already has a claimed unused voucher matching either the instance code or the template code
+        let voucher = await prisma.voucher.findFirst({
+            where: {
+                userId: session.user.id,
+                isUsed: false,
+                OR: [
+                    { code: cleanCode },
+                    { template: { code: cleanCode } }
+                ]
+            },
             include: { template: true }
         })
 
+        // 2. If no claimed voucher is found, check if a claimable master template exists
         if (!voucher) {
-            return NextResponse.json({ error: 'Kode voucher tidak valid' }, { status: 400 })
+            const template = await prisma.voucherTemplate.findUnique({
+                where: { code: cleanCode }
+            })
+
+            if (template) {
+                // Check if user has already claimed from this template
+                const alreadyClaimed = await prisma.voucher.findFirst({
+                    where: {
+                        userId: session.user.id,
+                        templateId: template.id
+                    }
+                })
+
+                if (alreadyClaimed) {
+                    return NextResponse.json({ error: 'Anda sudah pernah mengklaim voucher ini' }, { status: 400 })
+                }
+
+                // Validate targetNewUserOnly (registration < 14 days)
+                if (template.targetNewUserOnly) {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: session.user.id },
+                        select: { createdAt: true }
+                    })
+                    if (dbUser) {
+                        const now = new Date()
+                        const diffTime = now.getTime() - new Date(dbUser.createdAt).getTime()
+                        const diffDays = diffTime / (1000 * 60 * 60 * 24)
+                        if (diffDays > 14) {
+                            return NextResponse.json({ error: 'Voucher hanya berlaku untuk pengguna baru (daftar < 14 hari)' }, { status: 400 })
+                        }
+                    }
+                }
+
+                // Validate template expiration
+                if (template.expiresAt && template.expiresAt < new Date()) {
+                    return NextResponse.json({ error: 'Masa berlaku voucher ini sudah habis' }, { status: 400 })
+                }
+
+                // Validate usage limit
+                if (template.usageLimit > 0 && template.usageCount >= template.usageLimit) {
+                    return NextResponse.json({ error: 'Kuota penukaran voucher ini sudah habis' }, { status: 400 })
+                }
+
+                // Auto-claim the voucher inside a transaction
+                voucher = await prisma.$transaction(async (tx) => {
+                    // Verify usage count again under lock/transaction
+                    const t = await tx.voucherTemplate.findUnique({
+                        where: { id: template.id }
+                    })
+                    if (!t) throw new Error('Template tidak ditemukan')
+                    if (t.usageLimit > 0 && t.usageCount >= t.usageLimit) {
+                        throw new Error('Kuota penukaran voucher ini sudah habis')
+                    }
+
+                    // Increment template claim count
+                    await tx.voucherTemplate.update({
+                        where: { id: t.id },
+                        data: { usageCount: { increment: 1 } }
+                    })
+
+                    // Calculate personal expiry: template expiry or default 30 days
+                    let expiresAt = t.expiresAt
+                    if (!expiresAt) {
+                        const d = new Date()
+                        d.setDate(d.getDate() + 30) // Default 30 days
+                        expiresAt = d
+                    }
+
+                    // Determine discountAmount
+                    let discountAmount = t.discountValue
+                    if (t.type === 'FREE_DRINK' && !discountAmount) {
+                        discountAmount = 25000
+                    } else if (t.type === 'FREE_TOPPING' && !discountAmount) {
+                        discountAmount = 3000
+                    } else if (t.type === 'UPGRADE_SIZE' && !discountAmount) {
+                        discountAmount = 5000
+                    }
+
+                    // Generate a unique voucher instance code
+                    const userVoucherCode = `${t.code}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`
+
+                    // Create personal voucher
+                    return tx.voucher.create({
+                        data: {
+                            userId: session.user.id,
+                            code: userVoucherCode,
+                            type: t.type,
+                            description: t.description,
+                            discountAmount,
+                            expiresAt,
+                            templateId: t.id,
+                            isUsed: false
+                        },
+                        include: { template: true }
+                    })
+                })
+            }
         }
 
-        if (voucher.userId !== session.user.id) {
-            return NextResponse.json({ error: 'Voucher ini tidak valid untuk akun Anda' }, { status: 400 })
+        if (!voucher) {
+            return NextResponse.json({ error: 'Kode voucher tidak valid atau tidak ditemukan' }, { status: 400 })
         }
 
         if (voucher.isUsed) {
@@ -37,6 +144,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Voucher sudah kadaluarsa' }, { status: 400 })
         }
 
+        // Return unified voucher shape
         return NextResponse.json({ 
             success: true, 
             voucher: {
@@ -44,13 +152,18 @@ export async function POST(req: Request) {
                 code: voucher.code,
                 type: voucher.type,
                 description: voucher.description,
-                discountAmount: voucher.discountAmount,
+                discountAmount: voucher.discountAmount || voucher.template?.discountValue || 0,
                 minPurchase: voucher.template?.minPurchase || 0,
-                maxDiscount: voucher.template?.maxDiscount || null
+                maxDiscount: voucher.template?.maxDiscount || null,
+                template: voucher.template ? {
+                    discountValue: voucher.template.discountValue,
+                    minPurchase: voucher.template.minPurchase,
+                    maxDiscount: voucher.template.maxDiscount
+                } : null
             }
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Validate voucher error:', error)
-        return NextResponse.json({ error: 'Gagal memvalidasi voucher' }, { status: 500 })
+        return NextResponse.json({ error: error.message || 'Gagal memvalidasi voucher' }, { status: 500 })
     }
 }

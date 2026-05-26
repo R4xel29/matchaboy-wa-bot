@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
+import { AnimatePresence } from 'framer-motion';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import {
   Gift, Award, Coffee, Leaf, Share2, Save, Loader2,
   Trophy, Target, Recycle, ToggleLeft, ToggleRight,
@@ -566,6 +568,20 @@ export default function LoyaltySettingsClient({ initialSettings, stats }: Props)
           </div>
         </div>
       )}
+      {/* Saving Loader Overlay Screen */}
+      <AnimatePresence>
+        {saving && (
+          <LoadingScreen 
+            fullScreen={true}
+            customMessages={[
+              "Menyimpan pengaturan loyalty...",
+              "Memperbarui milestone poin...",
+              "Menyelaraskan reward ecofriendly...",
+              "Mohon tunggu sebentar..."
+            ]}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

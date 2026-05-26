@@ -18,7 +18,6 @@ interface SearchOverlayProps {
 export function SearchOverlay({ isOpen, onClose, onProductSelect, products, categories }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('promo');
-  const [fulfillmentMode, setFulfillmentMode] = useState<'pickup' | 'delivery'>('pickup');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sectionsRef = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -69,11 +68,9 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
 
   const isSearching = query.trim().length > 0;
 
-  // Focus input saat overlay dibuka
+  // Clear query saat overlay ditutup
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    } else {
+    if (!isOpen) {
       setQuery('');
       setActiveTab('promo');
     }
@@ -145,12 +142,10 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
           className="fixed inset-0 z-[80] bg-[#FFFDF9]"
         >
           {/* ═══════════════════════════════════════════════════════════════
-              HEADER: Lokasi + Fulfillment + Search
+              HEADER: Search Input on the same row as Back Button
               ═══════════════════════════════════════════════════════════════ */}
           <div className="sticky top-0 z-50 bg-[#FFFDF9] border-b border-[#EADFC9]/40 shadow-[0_2px_12px_rgba(148,111,72,0.03)] pt-safe">
-            
-            {/* Baris 1: Tombol kembali + Lokasi + Fulfillment */}
-            <div className="flex items-center gap-2 px-3 py-2.5">
+            <div className="flex items-center gap-3 px-4 py-3">
               <button
                 onClick={onClose}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#FAF6EE] transition-colors touch-target shrink-0"
@@ -159,47 +154,7 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                 <ArrowLeft className="w-5 h-5 text-[#54391C]" />
               </button>
 
-              {/* Kartu Lokasi Outlet */}
-              <div className="flex-1 flex items-center gap-2 bg-white border border-[#EADFC9]/40 rounded-xl px-3 py-2 shadow-[0_2px_8px_rgba(148,111,72,0.015)] min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-[#FAF6EE] border border-[#EADFC9]/30 flex items-center justify-center shrink-0 text-xs">
-                  📍
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-0.5">
-                    <span className="font-serif font-black text-xs text-[#2A1A0F] truncate">Suroyo Probolinggo</span>
-                    <ChevronDown className="w-3 h-3 text-[#946F48] shrink-0" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Toggle Ambil / Antar */}
-              <div className="flex bg-[#F5EBE0] p-0.5 rounded-xl border border-[#EADFC9]/50 shadow-inner shrink-0">
-                <button
-                  onClick={() => setFulfillmentMode('pickup')}
-                  className={`px-2.5 py-1.5 text-[9px] font-extrabold rounded-lg transition-all duration-300 ${
-                    fulfillmentMode === 'pickup'
-                      ? 'bg-[#946F48] text-white shadow-sm'
-                      : 'text-[#745432]'
-                  }`}
-                >
-                  Ambil
-                </button>
-                <button
-                  onClick={() => setFulfillmentMode('delivery')}
-                  className={`px-2.5 py-1.5 text-[9px] font-extrabold rounded-lg transition-all duration-300 ${
-                    fulfillmentMode === 'delivery'
-                      ? 'bg-[#946F48] text-white shadow-sm'
-                      : 'text-[#745432]'
-                  }`}
-                >
-                  Antar
-                </button>
-              </div>
-            </div>
-
-            {/* Baris 2: Input Pencarian */}
-            <div className="px-4 pb-2.5">
-              <div className="relative">
+              <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C7864]" />
                 <input
                   ref={inputRef}
@@ -225,7 +180,7 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
               </div>
             </div>
 
-            {/* Baris 3: Sticky Category Pills (hanya tampil saat tidak searching) */}
+            {/* Sticky Category Pills (hanya tampil saat tidak searching) */}
             {!isSearching && (
               <div
                 ref={tabsRef}

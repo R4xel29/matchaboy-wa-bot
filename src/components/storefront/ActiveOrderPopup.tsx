@@ -163,7 +163,7 @@ export function ActiveOrderPopup() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-        className="fixed bottom-24 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-96 z-50"
+        className="fixed bottom-24 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-96 z-[88]"
       >
         <div className="bg-[#FFFBF5]/90 backdrop-blur-xl border border-brand-700/10 rounded-2xl shadow-[0_12px_40px_rgba(148,111,72,0.15)] overflow-hidden">
           {/* Card Header & Content */}
