@@ -10,9 +10,19 @@ export async function GET() {
     // Fetch all active IDs and pick 3. Products are active unless badge is 'sold-out'.
     const allProducts = await prisma.product.findMany({
       where: { 
-        OR: [
-          { badge: null },
-          { badge: { not: 'sold-out' } }
+        AND: [
+          {
+            OR: [
+              { badge: null },
+              { badge: { not: 'archived' } }
+            ]
+          },
+          { 
+            OR: [
+              { badge: null },
+              { badge: { not: 'sold-out' } }
+            ]
+          }
         ]
       },
       select: { id: true }

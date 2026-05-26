@@ -91,6 +91,33 @@ export async function DELETE(
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
+        // Check if there are order items referencing this product
+        const orderItemCount = await prisma.orderItem.count({
+            where: { productId: id }
+        });
+
+        if (orderItemCount > 0) {
+            // Cannot delete permanently due to order history, so soft-delete it by setting badge to 'archived'
+            await prisma.product.update({
+                where: { id },
+                data: { badge: 'archived' }
+            });
+
+            await logAdminAction({
+                userId: session.user.id,
+                action: 'UPDATE',
+                entity: 'PRODUCT',
+                entityId: id,
+                details: `Mengarsipkan produk (mengubah status menjadi Archived karena memiliki riwayat transaksi)`
+            });
+
+            return NextResponse.json({ 
+                success: true, 
+                message: 'Produk diarsipkan karena memiliki riwayat transaksi.',
+                archived: true
+            });
+        }
+
         await prisma.product.delete({ where: { id } });
 
         await logAdminAction({

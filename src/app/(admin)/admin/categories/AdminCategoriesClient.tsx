@@ -80,9 +80,18 @@ export default function AdminCategoriesClient({ initialCategories }: Props) {
               </div>
             </div>
             <h3 className="font-semibold text-foreground text-[14px]">{cat.name}</h3>
-            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-              <Package className="w-3 h-3" /> {cat._count.products} products
-            </p>
+            <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border/10">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Package className="w-3 h-3" /> {cat._count.products} products
+              </p>
+              <button 
+                type="button"
+                onClick={() => router.push(`/admin/products?category=${cat.id}`)}
+                className="text-[10px] font-bold text-brand-600 hover:underline flex items-center gap-0.5"
+              >
+                Lihat Produk
+              </button>
+            </div>
           </div>
         ))}
       </div>

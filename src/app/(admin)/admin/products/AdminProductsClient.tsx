@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatRupiah } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import {
@@ -62,11 +62,77 @@ function compressToWebP(file: File, maxSize = 800, quality = 0.8): Promise<Blob>
 
 export default function AdminProductsClient({ initialProducts, categories, ingredients }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<'products' | 'combos'>('products');
+
+  useEffect(() => {
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [categoryParam]);
+
+  // Checkbox Selection & Bulk Actions
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab, selectedCategory, search]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    const visibleIds = filteredProducts.map(p => p.id);
+    const allSelected = visibleIds.every(id => selectedIds.includes(id));
+    if (allSelected) {
+      setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+    } else {
+      setSelectedIds(prev => {
+        const next = [...prev];
+        visibleIds.forEach(id => {
+          if (!next.includes(id)) next.push(id);
+        });
+        return next;
+      });
+    }
+  };
+
+  const handleBulkAction = async (action: 'delete' | 'availability' | 'category', value?: any) => {
+    if (selectedIds.length === 0) return;
+    
+    if (action === 'delete') {
+      if (!confirm(`Apakah Anda yakin ingin menghapus/mengarsipkan ${selectedIds.length} produk terpilih?`)) {
+        return;
+      }
+    }
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch('/api/admin/products/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds, action, value })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'Bulk action berhasil dijalankan', 'success');
+        setSelectedIds([]);
+        router.refresh();
+      } else {
+        throw new Error(data.error || 'Bulk action gagal');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Gagal memproses bulk action', 'error');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Visual Product Selector Modal
   const [activeGroupIdForPicker, setActiveGroupIdForPicker] = useState<string | null>(null);
@@ -488,11 +554,70 @@ export default function AdminProductsClient({ initialProducts, categories, ingre
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="mb-4 flex flex-col md:flex-row items-center justify-between gap-3 p-4 bg-brand-50 border border-brand-200 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-brand-600 animate-pulse" />
+            <span className="text-xs font-bold text-brand-800">{selectedIds.length} produk terpilih</span>
+          </div>
+          <div className="flex flex-wrap gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => handleBulkAction('availability', 'available')}
+              disabled={isUpdating}
+              className="px-3 py-1.5 bg-white border border-brand-200 text-brand-700 hover:bg-brand-50 text-[10px] font-bold rounded-lg transition-all shadow-sm"
+            >
+              Set Available
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkAction('availability', 'sold-out')}
+              disabled={isUpdating}
+              className="px-3 py-1.5 bg-white border border-brand-200 text-brand-750 hover:bg-brand-50 text-[10px] font-bold rounded-lg transition-all shadow-sm"
+            >
+              Set Sold Out
+            </button>
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkAction('category', e.target.value);
+                  e.target.value = '';
+                }
+              }}
+              disabled={isUpdating}
+              className="px-3 py-1.5 bg-white border border-brand-200 text-brand-750 hover:bg-brand-50 text-[10px] font-bold rounded-lg transition-all outline-none shadow-sm cursor-pointer"
+            >
+              <option value="">Pindahkan Kategori...</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => handleBulkAction('delete')}
+              disabled={isUpdating}
+              className="px-3 py-1.5 bg-rose-650 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg transition-all flex items-center gap-1 shadow-sm"
+            >
+              <Trash2 className="w-3 h-3" /> Hapus / Arsip
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Table */}
       <div className="hidden md:block bg-white border border-border/40 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/40">
+              <th className="w-10 px-5 py-3.5 text-left">
+                <input 
+                  type="checkbox" 
+                  checked={filteredProducts.length > 0 && filteredProducts.map(p => p.id).every(id => selectedIds.includes(id))}
+                  onChange={toggleSelectAll}
+                  className="rounded border-border text-brand-650 focus:ring-brand-500/20 w-4 h-4 cursor-pointer"
+                />
+              </th>
               <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Product</th>
               <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Category</th>
               <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Price</th>
@@ -507,6 +632,14 @@ export default function AdminProductsClient({ initialProducts, categories, ingre
               const isSoldOut = product.badge === 'sold-out';
               return (
                 <tr key={product.id} className={`group hover:bg-muted/20 transition-colors ${isSoldOut ? 'opacity-60' : ''}`}>
+                  <td className="w-10 px-5 py-3">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(product.id)}
+                      onChange={() => toggleSelect(product.id)}
+                      className="rounded border-border text-brand-650 focus:ring-brand-500/20 w-4 h-4 cursor-pointer"
+                    />
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-muted/50 overflow-hidden flex-shrink-0 border border-border/20">
@@ -564,8 +697,16 @@ export default function AdminProductsClient({ initialProducts, categories, ingre
         ) : filteredProducts.map((product) => {
           const isSoldOut = product.badge === 'sold-out';
           return (
-            <div key={product.id} className={`bg-white rounded-2xl border border-border/40 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${isSoldOut ? 'opacity-60' : ''}`}>
-              <div className="flex items-start gap-3">
+            <div key={product.id} className={`bg-white rounded-2xl border border-border/40 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] relative ${isSoldOut ? 'opacity-60' : ''}`}>
+              <div className="absolute top-4 right-4 z-10">
+                <input 
+                  type="checkbox" 
+                  checked={selectedIds.includes(product.id)}
+                  onChange={() => toggleSelect(product.id)}
+                  className="rounded border-border text-brand-650 focus:ring-brand-500/20 w-4 h-4 cursor-pointer"
+                />
+              </div>
+              <div className="flex items-start gap-3 pr-6">
                 <div className="w-14 h-14 rounded-xl bg-muted/50 overflow-hidden flex-shrink-0 border border-border/20">
                   {product.image ? <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="w-5 h-5 text-muted-foreground/30" /></div>}

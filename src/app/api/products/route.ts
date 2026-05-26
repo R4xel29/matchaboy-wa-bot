@@ -6,6 +6,12 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { badge: null },
+          { badge: { not: 'archived' } }
+        ]
+      },
       orderBy: { createdAt: 'desc' }
     });
 
