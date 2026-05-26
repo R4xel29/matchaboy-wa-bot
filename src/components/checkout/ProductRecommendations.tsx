@@ -35,6 +35,7 @@ export function ProductRecommendations({ onSelectProduct }: ProductRecommendatio
         {recommendations.map((product) => (
           <button
             key={product.id}
+            type="button"
             onClick={() => onSelectProduct(product)}
             className="snap-start shrink-0 w-36 bg-card rounded-2xl border border-border overflow-hidden text-left hover:border-brand-400 transition-colors group"
           >

@@ -35,6 +35,8 @@ export default function PaymentFailedClient({ order }: { order: any }) {
     }
   }
 
+  const isCancelled = order.status === 'CANCELLED';
+
   return (
     <div className="min-h-dvh bg-[#FDFBF7] flex flex-col items-center justify-center px-6 py-12 font-sans text-gray-800">
       <motion.div
@@ -50,13 +52,15 @@ export default function PaymentFailedClient({ order }: { order: any }) {
 
         <div className="space-y-2">
           <span className="text-[10px] text-red-600 font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-red-50 border border-red-100 inline-block">
-            Pembayaran Gagal / Kedalwarsa
+            {isCancelled ? 'Pesanan Dibatalkan' : 'Pembayaran Gagal / Kedalwarsa'}
           </span>
           <h2 className="font-serif text-xl font-black text-gray-900 tracking-tight mt-1.5 leading-snug">
-            Batas Waktu Pembayaran Habis
+            {isCancelled ? 'Pesanan Telah Dibatalkan' : 'Batas Waktu Pembayaran Habis'}
           </h2>
           <p className="text-xs text-gray-400 leading-relaxed font-medium px-2">
-            Waktu pembayaran 15 menit telah habis sebelum kami menerima konfirmasi dana dari Anda.
+            {isCancelled 
+              ? 'Pesanan ini telah dibatalkan atau ditolak. Silakan hubungi admin jika Anda membutuhkan bantuan.' 
+              : 'Waktu pembayaran 15 menit telah habis sebelum kami menerima konfirmasi dana dari Anda.'}
           </p>
         </div>
 

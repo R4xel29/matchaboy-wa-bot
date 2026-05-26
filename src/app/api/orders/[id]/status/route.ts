@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { expireOrder } from '@/lib/order-utils';
+import { expireOrder, cleanupOldPaymentProofs } from '@/lib/order-utils';
 
 export async function GET(
   _req: NextRequest,
@@ -10,6 +10,9 @@ export async function GET(
 
   // Auto-expire order if past payment deadline
   await expireOrder(id);
+
+  // Background cleanup of old payment proofs
+  cleanupOldPaymentProofs().catch(err => console.error('[Background Cleanup Error]', err));
   
   const order = await prisma.order.findUnique({
     where: { id },

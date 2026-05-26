@@ -101,14 +101,17 @@ export default function PaymentClient({
     return () => clearInterval(timer)
   }, [order.paymentExpiredAt, order.createdAt, order.id, router])
 
-  // Poll order status to redirect when payment is verified
+  // Poll order status to redirect when payment is verified or cancelled
   useEffect(() => {
     const checkPaymentStatus = async () => {
       try {
         const res = await fetch(`/api/orders/${order.id}/status`)
         if (res.ok) {
           const data = await res.json()
-          if (data.status !== 'PENDING_PAYMENT') {
+          if (data.status === 'CANCELLED') {
+            showToast('Pesanan ditolak/dibatalkan oleh admin.', 'error')
+            router.push(`/orders/${order.id}/payment-failed?reason=cancelled`)
+          } else if (data.status !== 'PENDING_PAYMENT') {
             showToast('Pembayaran berhasil diverifikasi!', 'success')
             router.push(`/orders/${order.id}`)
           }
@@ -129,6 +132,55 @@ export default function PaymentClient({
     setTimeout(() => setCopiedAccount(null), 2000)
   }
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(file); // fallback to original file
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              resolve(blob || file);
+            },
+            'image/webp',
+            0.5
+          );
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
   // Handle file upload
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,11 +192,14 @@ export default function PaymentClient({
 
     setUploading(true);
     try {
+      // Compress to WebP (usually reduces filesize by 90%+)
+      const compressedBlob = await compressImage(file);
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedBlob, 'payment-proof.webp');
       formData.append('type', 'payment-proof');
 
-      const res = await fetch('/api/admin/upload', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });

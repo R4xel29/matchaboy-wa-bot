@@ -1,9 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import CashierOrdersClient from './CashierOrdersClient';
+import { cleanupOldPaymentProofs } from '@/lib/order-utils';
 
 export const revalidate = 0;
 
 export default async function AdminCashierOrdersPage() {
+  // Background cleanup of old payment proofs
+  cleanupOldPaymentProofs().catch(err => console.error('[Background Cleanup Error]', err));
+
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
