@@ -144,6 +144,24 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Voucher sudah kadaluarsa' }, { status: 400 })
         }
 
+        let validProductIds: string[] = []
+        let validProductNames: string[] = []
+        if (voucher.template?.validProductIds) {
+            try {
+                const parsed = JSON.parse(voucher.template.validProductIds)
+                if (Array.isArray(parsed)) {
+                    validProductIds = parsed
+                    const products = await prisma.product.findMany({
+                        where: { id: { in: validProductIds } },
+                        select: { name: true }
+                    })
+                    validProductNames = products.map(p => p.name)
+                }
+            } catch (e) {
+                console.error('Error parsing validProductIds:', e)
+            }
+        }
+
         // Return unified voucher shape
         return NextResponse.json({ 
             success: true, 
@@ -155,10 +173,13 @@ export async function POST(req: Request) {
                 discountAmount: voucher.discountAmount || voucher.template?.discountValue || 0,
                 minPurchase: voucher.template?.minPurchase || 0,
                 maxDiscount: voucher.template?.maxDiscount || null,
+                validProductIds,
+                validProductNames,
                 template: voucher.template ? {
                     discountValue: voucher.template.discountValue,
                     minPurchase: voucher.template.minPurchase,
-                    maxDiscount: voucher.template.maxDiscount
+                    maxDiscount: voucher.template.maxDiscount,
+                    validProductIds: voucher.template.validProductIds
                 } : null
             }
         })

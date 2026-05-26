@@ -75,9 +75,12 @@ export default function CheckoutPage() {
     discountAmount?: number;
     minPurchase?: number;
     maxDiscount?: number | null;
+    validProductIds?: string[] | null;
+    validProductNames?: string[] | null;
     template?: {
       maxDiscount?: number | null;
       minPurchase?: number;
+      validProductIds?: string | null;
     } | null;
   } | null>(null);
   const [voucherLoading, setVoucherLoading] = useState(false);
@@ -105,10 +108,35 @@ export default function CheckoutPage() {
   const [selectedVoucherDetail, setSelectedVoucherDetail] = useState<any | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   const voucherDetail = useMemo(() => {
     if (!selectedVoucherDetail) return null;
     const template = selectedVoucherDetail.template || selectedVoucherDetail;
+
+    let validProductIds: string[] | null = null;
+    let validProductNames: string[] | null = null;
+
+    const rawProductIds = selectedVoucherDetail.validProductIds || template.validProductIds || null;
+    if (rawProductIds) {
+      if (Array.isArray(rawProductIds)) {
+        validProductIds = rawProductIds;
+      } else {
+        try {
+          const parsed = JSON.parse(rawProductIds);
+          if (Array.isArray(parsed)) validProductIds = parsed;
+        } catch {}
+      }
+    }
+
+    if (validProductIds && allProducts.length > 0) {
+      validProductNames = allProducts
+        .filter(p => validProductIds?.includes(p.id))
+        .map(p => p.name);
+    } else if (selectedVoucherDetail.validProductNames) {
+      validProductNames = selectedVoucherDetail.validProductNames;
+    }
+
     return {
       title: template.title || selectedVoucherDetail.title || 'Detail Voucher',
       description: template.description || selectedVoucherDetail.description || '',
@@ -120,8 +148,10 @@ export default function CheckoutPage() {
       maxDiscount: template.maxDiscount ?? selectedVoucherDetail.maxDiscount ?? null,
       expiresAt: selectedVoucherDetail.expiresAt || template.expiresAt || null,
       terms: template.terms || selectedVoucherDetail.terms || '',
+      validProductIds,
+      validProductNames,
     };
-  }, [selectedVoucherDetail]);
+  }, [selectedVoucherDetail, allProducts]);
 
   // Store settings
   const [storeSettings, setStoreSettings] = useState({
@@ -139,7 +169,6 @@ export default function CheckoutPage() {
 
   const [deliveryAddress, setDeliveryAddress] = useState<{ label: string, detail: string, streetDetail: string, lat: number, lng: number, distance: number, deliveryFee: number } | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   // Saved locations/addresses from profile
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
@@ -365,16 +394,60 @@ export default function CheckoutPage() {
   }, [userVouchers, selectedVoucherFilter, voucherSearchQuery]);
 
   const usableVouchers = useMemo(() => {
-    return filteredUserVouchers.filter(v => subtotal >= (v.template?.minPurchase || v.minPurchase || 0));
-  }, [filteredUserVouchers, subtotal]);
+    return filteredUserVouchers.filter(v => {
+      let validProductIds: string[] | null = null;
+      const rawProductIds = v.validProductIds || v.template?.validProductIds || null;
+      if (rawProductIds) {
+        if (Array.isArray(rawProductIds)) {
+          validProductIds = rawProductIds;
+        } else {
+          try {
+            const parsed = JSON.parse(rawProductIds);
+            if (Array.isArray(parsed)) validProductIds = parsed;
+          } catch {}
+        }
+      }
+
+      let eligibleSub = subtotal;
+      if (validProductIds && validProductIds.length > 0) {
+        eligibleSub = items
+          .filter(item => validProductIds.includes(item.productId))
+          .reduce((sum, item) => sum + item.totalPrice, 0);
+        if (eligibleSub === 0) return false;
+      }
+      return eligibleSub >= (v.template?.minPurchase || v.minPurchase || 0);
+    });
+  }, [filteredUserVouchers, subtotal, items]);
 
   const unusableVouchers = useMemo(() => {
-    return filteredUserVouchers.filter(v => subtotal < (v.template?.minPurchase || v.minPurchase || 0));
-  }, [filteredUserVouchers, subtotal]);
+    return filteredUserVouchers.filter(v => {
+      let validProductIds: string[] | null = null;
+      const rawProductIds = v.validProductIds || v.template?.validProductIds || null;
+      if (rawProductIds) {
+        if (Array.isArray(rawProductIds)) {
+          validProductIds = rawProductIds;
+        } else {
+          try {
+            const parsed = JSON.parse(rawProductIds);
+            if (Array.isArray(parsed)) validProductIds = parsed;
+          } catch {}
+        }
+      }
+
+      let eligibleSub = subtotal;
+      if (validProductIds && validProductIds.length > 0) {
+        eligibleSub = items
+          .filter(item => validProductIds.includes(item.productId))
+          .reduce((sum, item) => sum + item.totalPrice, 0);
+        if (eligibleSub === 0) return true;
+      }
+      return eligibleSub < (v.template?.minPurchase || v.minPurchase || 0);
+    });
+  }, [filteredUserVouchers, subtotal, items]);
 
   const hasUnusableVouchers = useMemo(() => {
-    return userVouchers.some(v => subtotal < (v.template?.minPurchase || v.minPurchase || 0));
-  }, [userVouchers, subtotal]);
+    return unusableVouchers.length > 0;
+  }, [unusableVouchers]);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -410,15 +483,40 @@ export default function CheckoutPage() {
     if (!appliedVoucher) return 0;
     if (appliedVoucher.type === 'GRATIS_ONGKIR' || appliedVoucher.type === 'DISKON_ONGKIR') return 0;
 
+    let validProductIds: string[] | null = null;
+    const rawProductIds = appliedVoucher.validProductIds || (appliedVoucher as any).template?.validProductIds || null;
+    if (rawProductIds) {
+      if (Array.isArray(rawProductIds)) {
+        validProductIds = rawProductIds;
+      } else {
+        try {
+          const parsed = JSON.parse(rawProductIds);
+          if (Array.isArray(parsed)) {
+            validProductIds = parsed;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    const eligibleItems = validProductIds && validProductIds.length > 0
+      ? items.filter(item => validProductIds.includes(item.productId))
+      : items;
+
+    const eligibleSubtotal = validProductIds && validProductIds.length > 0
+      ? eligibleItems.reduce((sum, item) => sum + item.totalPrice, 0)
+      : subtotal;
+
     if (appliedVoucher.type === 'FREE_TOPPING') {
-      const allAddOns = items.flatMap(item => item.addOns || []);
+      const allAddOns = eligibleItems.flatMap(item => item.addOns || []);
       if (allAddOns.length === 0) return 0;
       const highestToppingPrice = Math.max(...allAddOns.map(a => a.price));
       return highestToppingPrice > 0 ? highestToppingPrice : 0;
     }
 
     if (appliedVoucher.type === 'UPGRADE_SIZE') {
-      const maxSizeUpgrade = items.reduce((max, item) => {
+      const maxSizeUpgrade = eligibleItems.reduce((max, item) => {
         const itemSizePrice = item.sizePrice || 0;
         return itemSizePrice > max ? itemSizePrice : max;
       }, 0);
@@ -432,20 +530,20 @@ export default function CheckoutPage() {
 
     if (discountVal > 0) {
       if (appliedVoucher.type === 'DISCOUNT_PCT') {
-        const rawDiscount = Math.round((subtotal * discountVal) / 100);
+        const rawDiscount = Math.round((eligibleSubtotal * discountVal) / 100);
         const maxDiscount = appliedVoucher.maxDiscount ?? (appliedVoucher as any).template?.maxDiscount;
         if (maxDiscount && maxDiscount > 0) {
           return Math.min(rawDiscount, maxDiscount);
         }
         return rawDiscount;
       }
-      return discountVal;
+      return Math.min(eligibleSubtotal, discountVal);
     }
     switch (appliedVoucher.type) {
-      case 'FREE_DRINK': return 25000;
-      case 'REFERRAL_REWARD': return 25000;
-      case 'DISCOUNT_RP': return 10000;
-      default: return 10000;
+      case 'FREE_DRINK': return Math.min(eligibleSubtotal, 25000);
+      case 'REFERRAL_REWARD': return Math.min(eligibleSubtotal, 25000);
+      case 'DISCOUNT_RP': return Math.min(eligibleSubtotal, 10000);
+      default: return Math.min(eligibleSubtotal, 10000);
     }
   }, [appliedVoucher, subtotal, items]);
 
@@ -1451,17 +1549,68 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* S&K */}
-                {voucherDetail.terms && (
-                  <div className="bg-[#FFFBF5] rounded-2xl p-4 border border-[#EADFC9]/30 space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-450">Syarat & Ketentuan</h4>
-                    <ul className="list-disc pl-4 space-y-1 text-xs text-gray-650 font-medium leading-relaxed">
-                      {voucherDetail.terms.split('\n').filter((t: string) => t.trim().length > 0).map((term: string, idx: number) => (
-                        <li key={idx}>{term}</li>
+                {/* Products */}
+                {voucherDetail.validProductNames && voucherDetail.validProductNames.length > 0 && (
+                  <div className="border-t border-gray-100 pt-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1">Berlaku untuk Produk</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {voucherDetail.validProductNames.map((name: string, idx: number) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-150 text-emerald-800 text-[10px] font-bold">
+                          {name}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
+
+                {/* S&K */}
+                <div className="bg-[#FFFBF5] rounded-2xl p-4 border border-[#EADFC9]/30 space-y-2">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Syarat & Ketentuan</h4>
+                  <ul className="list-disc pl-4 space-y-1 text-xs text-gray-650 font-medium leading-relaxed">
+                    {/* Custom Terms from Template */}
+                    {voucherDetail.terms && voucherDetail.terms.split('\n').filter((t: string) => t.trim().length > 0).map((term: string, idx: number) => (
+                      <li key={`custom-${idx}`}>{term}</li>
+                    ))}
+                    
+                    {/* Min Purchase */}
+                    <li>
+                      Minimum nilai pembelanjaan subtotal keranjang belanja adalah <span className="font-bold text-gray-800">{voucherDetail.minPurchase > 0 ? formatRupiah(voucherDetail.minPurchase) : 'tanpa minimum belanja'}</span>.
+                    </li>
+
+                    {/* Max Discount */}
+                    {voucherDetail.maxDiscount && (
+                      <li>
+                        Maksimum potongan potongan belanja yang bisa didapatkan dari voucher ini adalah <span className="font-bold text-gray-800">{formatRupiah(voucherDetail.maxDiscount)}</span>.
+                      </li>
+                    )}
+
+                    {/* Valid Products Rule */}
+                    {voucherDetail.validProductNames && voucherDetail.validProductNames.length > 0 ? (
+                      <li>
+                        Voucher ini hanya berlaku untuk produk-produk pilihan berikut: <span className="font-bold text-gray-800">{voucherDetail.validProductNames.join(', ')}</span>.
+                      </li>
+                    ) : (
+                      voucherDetail.validProductIds && voucherDetail.validProductIds.length > 0 && (
+                        <li>
+                          Voucher ini hanya berlaku untuk produk-produk pilihan tertentu.
+                        </li>
+                      )
+                    )}
+
+                    {/* General Rules */}
+                    <li>
+                      Voucher hanya dapat digunakan satu kali saja per transaksi dan tidak dapat digabungkan dengan kode kupon promo lainnya.
+                    </li>
+
+                    <li>
+                      Masa kedaluwarsa voucher adalah sampai <span className="font-bold text-gray-800">{voucherDetail.expiresAt ? new Date(voucherDetail.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'selamanya'}</span>. Jika melewati batas waktu tersebut, voucher otomatis hangus.
+                    </li>
+
+                    <li>
+                      Apabila transaksi dibatalkan atau kedaluwarsa sebelum pembayaran berhasil diproses penuh, voucher akan otomatis dipulihkan kembali menjadi aktif pada profil Anda.
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               {/* Close Action */}
@@ -1856,6 +2005,33 @@ export default function CheckoutPage() {
                                       )}
                                     </div>
                                     <p className="text-[11px] text-gray-400 mt-1">Kode: {v.code}</p>
+                                    {(() => {
+                                      const rawProductIds = v.validProductIds || v.template?.validProductIds || null;
+                                      let validIds: string[] | null = null;
+                                      if (rawProductIds) {
+                                        if (Array.isArray(rawProductIds)) {
+                                          validIds = rawProductIds;
+                                        } else {
+                                          try {
+                                            const parsed = JSON.parse(rawProductIds);
+                                            if (Array.isArray(parsed)) validIds = parsed;
+                                          } catch {}
+                                        }
+                                      }
+                                      if (validIds && validIds.length > 0 && allProducts.length > 0) {
+                                        const names = allProducts.filter(p => validIds?.includes(p.id)).map(p => p.name);
+                                        if (names.length > 0) {
+                                          return (
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                              <span className="text-[9px] font-bold text-[#2E5A44] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                                                Berlaku untuk: {names.join(', ')}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                      }
+                                      return null;
+                                    })()}
                                   </div>
                                   <div className="flex flex-col items-end gap-2.5 shrink-0">
                                     {v.template?.bannerImage && (
@@ -1922,7 +2098,34 @@ export default function CheckoutPage() {
                                         Maks. Potongan: {formatRupiah(v.maxDiscount || v.template?.maxDiscount || 0)}
                                       </p>
                                     )}
-                                    <p className="text-[11px] text-gray-450 mt-0.5">Kode: {v.code}</p>
+                                    <p className="text-[11px] text-gray-455 mt-0.5">Kode: {v.code}</p>
+                                    {(() => {
+                                      const rawProductIds = v.validProductIds || v.template?.validProductIds || null;
+                                      let validIds: string[] | null = null;
+                                      if (rawProductIds) {
+                                        if (Array.isArray(rawProductIds)) {
+                                          validIds = rawProductIds;
+                                        } else {
+                                          try {
+                                            const parsed = JSON.parse(rawProductIds);
+                                            if (Array.isArray(parsed)) validIds = parsed;
+                                          } catch {}
+                                        }
+                                      }
+                                      if (validIds && validIds.length > 0 && allProducts.length > 0) {
+                                        const names = allProducts.filter(p => validIds?.includes(p.id)).map(p => p.name);
+                                        if (names.length > 0) {
+                                          return (
+                                            <div className="mt-1 flex flex-wrap gap-1">
+                                              <span className="text-[9px] font-bold text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">
+                                                Berlaku untuk: {names.join(', ')}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                      }
+                                      return null;
+                                    })()}
                                   </div>
                                   <div className="flex flex-col items-end gap-2.5 shrink-0">
                                     {v.template?.bannerImage ? (

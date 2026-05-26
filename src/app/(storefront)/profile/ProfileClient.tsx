@@ -87,6 +87,10 @@ type VoucherShape = {
   description: string;
   isUsed: boolean;
   expiresAt: string | null;
+  template?: {
+    bannerImage?: string | null;
+    validProductIds?: string | null;
+  } | null;
 };
 
 type MilestoneInfo = {
@@ -2859,8 +2863,18 @@ function VouchersSection({ vouchers: initialVouchers = [] }: { vouchers?: Vouche
                     <div className="absolute left-[52px] -bottom-2.5 w-5 h-5 bg-[#FDFBF7] rounded-full border border-gray-150/80 z-10" />
 
                     {/* Left Stub */}
-                    <div className="w-14 bg-gradient-to-br from-[#1E3F20] to-[#2E5A44] flex flex-col items-center justify-center text-2xl border-r border-dashed border-[#D4A574]/30 relative shrink-0 text-[#D4A574]">
-                      {getVoucherIcon(v.type)}
+                    <div className="w-14 relative border-r border-dashed border-[#D4A574]/30 shrink-0 overflow-hidden flex items-center justify-center">
+                      {v.template?.bannerImage ? (
+                        <img 
+                          src={v.template.bannerImage} 
+                          alt="Banner" 
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#1E3F20] to-[#2E5A44] flex flex-col items-center justify-center text-2xl text-[#D4A574]">
+                          {getVoucherIcon(v.type)}
+                        </div>
+                      )}
                     </div>
                     
                     {/* Details */}

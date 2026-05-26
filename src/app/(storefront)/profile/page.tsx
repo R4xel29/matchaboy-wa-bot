@@ -48,6 +48,7 @@ export default async function ProfilePage() {
       prisma.voucher.findMany({
         where: { userId: session.user.id, isUsed: false },
         orderBy: { createdAt: 'desc' },
+        include: { template: true },
         take: 10,
       }),
       prisma.loyaltySettings.findFirst(),
@@ -96,6 +97,10 @@ export default async function ProfilePage() {
           description: v.description,
           isUsed: v.isUsed,
           expiresAt: v.expiresAt?.toISOString() || null,
+          template: v.template ? {
+            bannerImage: v.template.bannerImage,
+            validProductIds: v.template.validProductIds,
+          } : null,
         }))}
         milestones={loyaltySettings ? {
           milestone1: { target: loyaltySettings.milestone1Points, reward: loyaltySettings.milestone1Desc, enabled: loyaltySettings.milestone1Enabled },

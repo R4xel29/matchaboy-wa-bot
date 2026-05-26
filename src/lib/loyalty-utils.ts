@@ -65,58 +65,54 @@ export async function awardPoints({
   });
 
   // 3. Cek milestone & generate voucher
-  const newVouchers = await checkAndAwardMilestones(userId, user.points, settings);
+  const newVouchers = await checkAndAwardMilestones(userId, user.points - pointsToAdd, pointsToAdd, settings);
 
   return { newPoints: user.points, newVouchers };
 }
 
 /**
  * Cek apakah user telah melewati milestone dan berikan voucher.
- * Logika: Setelah milestone 3 tercapai, poin dikurangi (reset).
+ * Logika: Setelah milestone 3 tercapai, poin dikurangi (reset) jika diaktifkan.
  */
 async function checkAndAwardMilestones(
   userId: string,
-  currentPoints: number,
+  oldPoints: number,
+  pointsToAdd: number,
   settings: Awaited<ReturnType<typeof getLoyaltySettings>>
 ) {
   const vouchersCreated: { type: string; description: string }[] = [];
   let pointsToDeduct = 0;
 
-  // Milestone 3 (target utama, misal 15 poin) — cek dulu karena mungkin langsung lewat
-  if (settings.milestone3Enabled && currentPoints >= settings.milestone3Points) {
-    // Berikan voucher milestone 3
-    await prisma.voucher.create({
-      data: {
-        userId,
-        type: settings.milestone3Reward,
-        description: settings.milestone3Desc,
-      },
-    });
-    vouchersCreated.push({ type: settings.milestone3Reward, description: settings.milestone3Desc });
+  let currentP = oldPoints;
 
-    // Reset poin jika diaktifkan
-    if (settings.milestone3ResetPoints) {
-      pointsToDeduct = settings.milestone3Points;
+  for (let i = 1; i <= pointsToAdd; i++) {
+    currentP++;
+
+    // Check Milestone 1
+    if (settings.milestone1Enabled) {
+      const isHit = settings.milestone3ResetPoints 
+        ? currentP === settings.milestone1Points
+        : (currentP % settings.milestone3Points) === settings.milestone1Points;
+      
+      if (isHit) {
+        await prisma.voucher.create({
+          data: {
+            userId,
+            type: settings.milestone1Reward,
+            description: settings.milestone1Desc,
+          },
+        });
+        vouchersCreated.push({ type: settings.milestone1Reward, description: settings.milestone1Desc });
+      }
     }
-  } else {
-    // Cek milestone 2 (kelipatan, misal 10)
-    if (settings.milestone2Enabled && currentPoints >= settings.milestone2Points) {
-      // Cek apakah sudah pernah dapat voucher milestone2 di siklus ini
-      // Siklus = dari 0 sampai milestone3Points
-      const cycleStart = Math.floor((currentPoints - 1) / settings.milestone3Points) * settings.milestone3Points;
-      const milestone2Target = cycleStart + settings.milestone2Points;
 
-      // Cek apakah sudah dapat voucher di titik ini
-      const existing = await prisma.voucher.findFirst({
-        where: {
-          userId,
-          type: settings.milestone2Reward,
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }, // Dalam 24 jam terakhir, simple check
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (!existing && currentPoints >= milestone2Target && currentPoints < settings.milestone3Points) {
+    // Check Milestone 2
+    if (settings.milestone2Enabled) {
+      const isHit = settings.milestone3ResetPoints
+        ? currentP === settings.milestone2Points
+        : (currentP % settings.milestone3Points) === settings.milestone2Points;
+      
+      if (isHit) {
         await prisma.voucher.create({
           data: {
             userId,
@@ -128,34 +124,26 @@ async function checkAndAwardMilestones(
       }
     }
 
-    // Cek milestone 1 (kelipatan, misal 5)
-    if (settings.milestone1Enabled && currentPoints >= settings.milestone1Points) {
-      const cycleStart = Math.floor((currentPoints - 1) / settings.milestone3Points) * settings.milestone3Points;
-      const milestone1Target = cycleStart + settings.milestone1Points;
-
-      const existing = await prisma.voucher.findFirst({
-        where: {
-          userId,
-          type: settings.milestone1Reward,
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (
-        !existing &&
-        currentPoints >= milestone1Target &&
-        currentPoints < settings.milestone2Points &&
-        currentPoints < settings.milestone3Points
-      ) {
+    // Check Milestone 3
+    if (settings.milestone3Enabled) {
+      const isHit = settings.milestone3ResetPoints
+        ? currentP === settings.milestone3Points
+        : (currentP % settings.milestone3Points) === 0;
+      
+      if (isHit) {
         await prisma.voucher.create({
           data: {
             userId,
-            type: settings.milestone1Reward,
-            description: settings.milestone1Desc,
+            type: settings.milestone3Reward,
+            description: settings.milestone3Desc,
           },
         });
-        vouchersCreated.push({ type: settings.milestone1Reward, description: settings.milestone1Desc });
+        vouchersCreated.push({ type: settings.milestone3Reward, description: settings.milestone3Desc });
+
+        if (settings.milestone3ResetPoints) {
+          pointsToDeduct += settings.milestone3Points;
+          currentP -= settings.milestone3Points;
+        }
       }
     }
   }
@@ -172,7 +160,7 @@ async function checkAndAwardMilestones(
         userId,
         amount: -pointsToDeduct,
         type: 'REDEEM_MILESTONE',
-        description: `Poin direset setelah mencapai ${settings.milestone3Points} poin (Reward: ${settings.milestone3Desc})`,
+        description: `Poin direset setelah mencapai kelipatan ${settings.milestone3Points} poin`,
       },
     });
   }

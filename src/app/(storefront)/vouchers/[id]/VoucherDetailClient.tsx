@@ -317,6 +317,20 @@ export default function VoucherDetailClient({ voucher, products }: { voucher: an
               {/* Scrollable details container */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 scrollbar-hide">
                 <div className="space-y-4">
+                  {/* Custom Terms from Template */}
+                  {(voucher.template?.terms || voucher.terms) && (
+                    (voucher.template?.terms || voucher.terms).split('\n').filter((t: string) => t.trim().length > 0).map((term: string, idx: number) => (
+                      <div key={`custom-${idx}`} className="flex gap-3 items-start">
+                        <div className="w-5 h-5 rounded-full bg-[#B48A5E]/10 flex items-center justify-center text-xs shrink-0 text-[#B48A5E] font-bold mt-0.5">
+                          •
+                        </div>
+                        <div className="text-sm text-gray-600 leading-relaxed font-medium">
+                          {term}
+                        </div>
+                      </div>
+                    ))
+                  )}
+
                   <div className="flex gap-3 items-start">
                     <div className="w-5 h-5 rounded-full bg-[#B48A5E]/10 flex items-center justify-center text-xs shrink-0 text-[#B48A5E] font-bold mt-0.5">
                       1
