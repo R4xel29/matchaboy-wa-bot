@@ -309,13 +309,14 @@ model HeroBanner {
 }
 
 model PromoPopup {
-  id        String   @id @default(cuid())
-  title     String
-  image     String   // Image URL
-  linkUrl   String?  // Optional redirect URL when clicked
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  title            String
+  image            String   // Image URL
+  linkUrl          String?  // Optional redirect URL when clicked
+  isActive         Boolean  @default(true)
+  displayFrequency String   @default("ONCE") // ONCE, EVERY_SESSION, EVERY_5_MIN, EVERY_10_MIN, EVERY_20_MIN, EVERY_30_MIN, EVERY_DAY
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model CashierShift {
@@ -664,5 +665,12 @@ model Expense {
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model WaBotSession {
+  key   String  @id
+  value String?
+
+  @@map("wa_bot_session")
 }
 

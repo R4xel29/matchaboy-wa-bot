@@ -14,6 +14,7 @@ interface PromoPopup {
   image: string;
   linkUrl?: string | null;
   isActive: boolean;
+  displayFrequency?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -51,7 +52,8 @@ export default function PromoPopupsClient({ initialPopups }: { initialPopups: Pr
     title: '',
     image: '',
     linkUrl: '',
-    isActive: true
+    isActive: true,
+    displayFrequency: 'ONCE'
   });
 
   const router = useRouter();
@@ -175,7 +177,8 @@ export default function PromoPopupsClient({ initialPopups }: { initialPopups: Pr
         title: popup.title,
         image: popup.image,
         linkUrl: popup.linkUrl || '',
-        isActive: popup.isActive
+        isActive: popup.isActive,
+        displayFrequency: popup.displayFrequency || 'ONCE'
       });
     } else {
       setEditingPopup(null);
@@ -183,7 +186,8 @@ export default function PromoPopupsClient({ initialPopups }: { initialPopups: Pr
         title: '',
         image: '',
         linkUrl: '',
-        isActive: true
+        isActive: true,
+        displayFrequency: 'ONCE'
       });
     }
     setIsModalOpen(true);
@@ -453,6 +457,19 @@ export default function PromoPopupsClient({ initialPopups }: { initialPopups: Pr
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Link Tujuan (Klik Redirect - Opsional)</label>
                     <input value={formData.linkUrl} onChange={e => setFormData({...formData, linkUrl: e.target.value})} placeholder="Contoh: /vouchers atau /profile" className="w-full text-sm px-3 py-2.5 bg-muted/40 border border-border/80 rounded-xl focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all" />
                     <p className="text-[10px] text-muted-foreground mt-1">Kosongkan jika gambar tidak ingin bisa diklik. Masukkan route lokal (e.g. <code>/vouchers</code>) atau URL eksternal.</p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Frekuensi Tampilan</label>
+                    <select value={formData.displayFrequency} onChange={e => setFormData({...formData, displayFrequency: e.target.value})} className="w-full text-sm px-3 py-2.5 bg-muted/40 border border-border/80 rounded-xl focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all appearance-none cursor-pointer">
+                       <option value="ONCE">Hanya Sekali (Paling Direkomendasikan)</option>
+                       <option value="EVERY_SESSION">Setiap Sesi Baru (Buka Tab/Browser Baru)</option>
+                       <option value="EVERY_5_MIN">Setiap 5 Menit</option>
+                       <option value="EVERY_10_MIN">Setiap 10 Menit</option>
+                       <option value="EVERY_20_MIN">Setiap 20 Menit</option>
+                       <option value="EVERY_30_MIN">Setiap 30 Menit</option>
+                       <option value="EVERY_DAY">Setiap 1 Hari (24 Jam)</option>
+                    </select>
                   </div>
 
                   <div>

@@ -12,6 +12,7 @@ interface ActivePopup {
   image: string;
   linkUrl: string | null;
   isActive: boolean;
+  displayFrequency?: string;
 }
 
 export function PromoPopup() {
@@ -29,8 +30,37 @@ export function PromoPopup() {
         
         const data = await res.json();
         if (data && data.id) {
-          const isSeen = localStorage.getItem(`matchaboy_promo_popup_seen_${data.id}`);
-          if (!isSeen) {
+          const freq = data.displayFrequency || 'ONCE';
+          let shouldShow = false;
+
+          if (freq === 'ONCE') {
+            const isSeen = localStorage.getItem(`matchaboy_promo_popup_seen_${data.id}`);
+            if (!isSeen) shouldShow = true;
+          } else if (freq === 'EVERY_SESSION') {
+            const isSeenSession = sessionStorage.getItem(`matchaboy_promo_popup_seen_session_${data.id}`);
+            if (!isSeenSession) shouldShow = true;
+          } else {
+            // Time-based frequencies: EVERY_5_MIN, EVERY_10_MIN, EVERY_20_MIN, EVERY_30_MIN, EVERY_DAY
+            const lastSeenStr = localStorage.getItem(`matchaboy_promo_popup_last_seen_${data.id}`);
+            if (!lastSeenStr) {
+              shouldShow = true;
+            } else {
+              const lastSeen = parseInt(lastSeenStr, 10);
+              const now = Date.now();
+              let cooldownMs = 24 * 60 * 60 * 1000; // default EVERY_DAY: 1 day
+
+              if (freq === 'EVERY_5_MIN') cooldownMs = 5 * 60 * 1000;
+              else if (freq === 'EVERY_10_MIN') cooldownMs = 10 * 60 * 1000;
+              else if (freq === 'EVERY_20_MIN') cooldownMs = 20 * 60 * 1000;
+              else if (freq === 'EVERY_30_MIN') cooldownMs = 30 * 60 * 1000;
+
+              if (now - lastSeen > cooldownMs) {
+                shouldShow = true;
+              }
+            }
+          }
+
+          if (shouldShow) {
             setPopup(data);
             // Delay slightly for smoother visual entry after loading
             setTimeout(() => {
@@ -50,7 +80,16 @@ export function PromoPopup() {
 
   const handleClose = () => {
     if (popup) {
-      localStorage.setItem(`matchaboy_promo_popup_seen_${popup.id}`, 'true');
+      const freq = popup.displayFrequency || 'ONCE';
+      const nowStr = Date.now().toString();
+
+      if (freq === 'ONCE') {
+        localStorage.setItem(`matchaboy_promo_popup_seen_${popup.id}`, 'true');
+      } else if (freq === 'EVERY_SESSION') {
+        sessionStorage.setItem(`matchaboy_promo_popup_seen_session_${popup.id}`, 'true');
+      } else {
+        localStorage.setItem(`matchaboy_promo_popup_last_seen_${popup.id}`, nowStr);
+      }
     }
     setIsOpen(false);
   };
@@ -58,8 +97,17 @@ export function PromoPopup() {
   const handleImageClick = () => {
     if (!popup) return;
     
+    const freq = popup.displayFrequency || 'ONCE';
+    const nowStr = Date.now().toString();
+
     // Mark as seen so they don't see it again on return
-    localStorage.setItem(`matchaboy_promo_popup_seen_${popup.id}`, 'true');
+    if (freq === 'ONCE') {
+      localStorage.setItem(`matchaboy_promo_popup_seen_${popup.id}`, 'true');
+    } else if (freq === 'EVERY_SESSION') {
+      sessionStorage.setItem(`matchaboy_promo_popup_seen_session_${popup.id}`, 'true');
+    } else {
+      localStorage.setItem(`matchaboy_promo_popup_last_seen_${popup.id}`, nowStr);
+    }
     setIsOpen(false);
 
     if (popup.linkUrl) {

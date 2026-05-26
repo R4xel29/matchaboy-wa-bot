@@ -23,6 +23,7 @@ export async function PATCH(
     if (body.image !== undefined) updateData.image = body.image;
     if (body.linkUrl !== undefined) updateData.linkUrl = body.linkUrl || null;
     if (body.isActive !== undefined) updateData.isActive = body.isActive;
+    if (body.displayFrequency !== undefined) updateData.displayFrequency = body.displayFrequency;
 
     const popup = await prisma.promoPopup.update({
       where: { id },

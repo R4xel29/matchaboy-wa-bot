@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     }
 
     const json = await req.json();
-    const { title, image, linkUrl, isActive } = json;
+    const { title, image, linkUrl, isActive, displayFrequency } = json;
 
     if (!title || !image) {
         return new NextResponse('Missing required fields', { status: 400 });
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
         image,
         linkUrl: linkUrl || null,
         isActive: isActive !== undefined ? isActive : true,
+        displayFrequency: displayFrequency || 'ONCE',
       },
     });
 
