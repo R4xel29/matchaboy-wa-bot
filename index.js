@@ -138,10 +138,11 @@ async function connectToWhatsApp() {
         const isLoginRequest = lowerText.startsWith('login-') || 
                                lowerText.includes('request link untuk masuk / daftar');
         const isDeleteRequest = lowerText.startsWith('hapus-');
+        const isVerificationRequest = lowerText.startsWith('verifikasi-');
 
-        console.log(`[DEBUG] Pesan masuk dari ${remoteJid} (Telepon: ${senderNumber}, JID Kirim: ${senderJid}): "${text}" (isLogin: ${isLoginRequest}, isDelete: ${isDeleteRequest})`);
+        console.log(`[DEBUG] Pesan masuk dari ${remoteJid} (Telepon: ${senderNumber}, JID Kirim: ${senderJid}): "${text}" (isLogin: ${isLoginRequest}, isDelete: ${isDeleteRequest}, isVerify: ${isVerificationRequest})`);
 
-        if (isLoginRequest || isDeleteRequest) {
+        if (isLoginRequest || isDeleteRequest || isVerificationRequest) {
             // Tentukan URL Webhook secara dinamis berdasarkan domain asal pada pesan jika ada
             let webhookUrl = NEXTJS_WEBHOOK_URL;
             // Fix #3: regex sebelumnya punya karakter `\.` yang memblokir domain berisi titik (misal vercel.app)
