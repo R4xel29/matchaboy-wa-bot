@@ -47,10 +47,8 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((s) => s.clearCart);
 
   const [orderType, setOrderType] = useState<OrderType>('PICKUP');
-  const [pickupDate, setPickupDate] = useState<string | null>(() => {
-    const now = new Date();
-    return now.toISOString().split('T')[0];
-  });
+  const [pickupDate, setPickupDate] = useState<string | null>(null);
+  const [tempPickupDate, setTempPickupDate] = useState<string | null>(null);
   const [pickupTime, setPickupTime] = useState<string | null>('Sekarang');
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [tempPickupTime, setTempPickupTime] = useState<string>('Sekarang');
@@ -58,6 +56,9 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [showPickupWarning, setShowPickupWarning] = useState(false);
   const [showTumblerWarning, setShowTumblerWarning] = useState(false);
+
+  // Voucher restore tracking
+  const [isVoucherRestored, setIsVoucherRestored] = useState(false);
 
   // Tumbler state
   const [hasTumbler, setHasTumbler] = useState(false);
@@ -157,8 +158,68 @@ export default function CheckoutPage() {
   const [storeSettings, setStoreSettings] = useState({
     openTime: '08:00', closeTime: '21:00', pickupSlotInterval: 5,
     deliveryFeePerKm: 2000, maxDeliveryDistance: 10,
-    storeLat: -7.756928, storeLng: 113.211502
+    storeLat: -7.756928, storeLng: 113.211502,
+    operationalDays: '[0,1,2,3,4,5,6]',
+    disabledDates: '[]'
   });
+
+  const availableDates = useMemo(() => {
+    const dates: { value: string; label: string; dayLabel: string; isToday: boolean }[] = [];
+    let openDays: number[] = [0,1,2,3,4,5,6];
+    try {
+      openDays = JSON.parse(storeSettings.operationalDays || '[0,1,2,3,4,5,6]');
+    } catch {}
+    let closedDates: string[] = [];
+    try {
+      closedDates = JSON.parse(storeSettings.disabledDates || '[]');
+    } catch {}
+    
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    let d = new Date();
+    let iterations = 0;
+    while (dates.length < 3 && iterations < 30) {
+      iterations++;
+      const dayOfWeek = d.getDay();
+      const dateString = d.toLocaleDateString('en-CA');
+      
+      const isOpenDay = openDays.includes(dayOfWeek);
+      const isHoliday = closedDates.includes(dateString);
+      
+      let isAvailable = isOpenDay && !isHoliday;
+      
+      const now = new Date();
+      const isToday = dateString === now.toLocaleDateString('en-CA');
+      if (isToday && isAvailable) {
+        const [closeH, closeM] = storeSettings.closeTime.split(':').map(Number);
+        const closeMinutes = closeH * 60 + closeM;
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        if (currentMinutes >= closeMinutes - 15) {
+          isAvailable = false;
+        }
+      }
+      
+      if (isAvailable) {
+        dates.push({
+          value: dateString,
+          label: `${d.getDate()} ${monthNames[d.getMonth()]}`,
+          dayLabel: isToday ? 'Hari ini' : dayNames[d.getDay()],
+          isToday
+        });
+      }
+      
+      d.setDate(d.getDate() + 1);
+    }
+    return dates;
+  }, [storeSettings.operationalDays, storeSettings.disabledDates, storeSettings.closeTime]);
+
+  useEffect(() => {
+    if (availableDates.length > 0 && !pickupDate) {
+      setPickupDate(availableDates[0].value);
+      setTempPickupDate(availableDates[0].value);
+    }
+  }, [availableDates, pickupDate]);
 
   // Automatically reset tumbler option when shipping method changes to DELIVERY
   useEffect(() => {
@@ -278,9 +339,9 @@ export default function CheckoutPage() {
               setToast({ message: `Alamat utama "${defaultLoc.name}" di luar jangkauan (${distance.toFixed(1)} km)`, type: 'error' });
             }
 
-            // Set initial form inputs to address custom recipient details, with fallback to profile
-            setValue('name', defaultLoc.recipient || pName);
-            setValue('phone', defaultLoc.phone || pPhone);
+            // Always default to profile details first
+            setValue('name', pName);
+            setValue('phone', pPhone);
           } else {
             // No default location, so set name and phone to profile values
             setValue('name', pName);
@@ -332,9 +393,9 @@ export default function CheckoutPage() {
       setToast({ message: `Alamat "${addr.name || 'Pilihan'}" berada di luar jangkauan pengiriman (${distance.toFixed(1)} km)`, type: 'error' });
     }
 
-    // Set form recipient details
-    setValue('name', addr.recipient || profileName);
-    setValue('phone', addr.phone || profilePhone);
+    // Always default to profile name and phone (Alamat Tersimpan perbaikan)
+    setValue('name', profileName);
+    setValue('phone', profilePhone);
   };
 
   const fetchVouchers = async () => {
@@ -559,12 +620,15 @@ export default function CheckoutPage() {
     const closeMinutes = closeH * 60 + closeM;
 
     const now = new Date();
+    // Check if selected date is today in local timezone
+    const isToday = tempPickupDate === now.toLocaleDateString('en-CA');
+
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const minSlot = currentMinutes + 15;
+    const minSlot = isToday ? currentMinutes + 15 : openMinutes;
 
     const startMinutes = Math.max(openMinutes, minSlot);
     const slots: string[] = [];
-    const interval = 15;
+    const interval = storeSettings.pickupSlotInterval || 15;
 
     const remainder = startMinutes % interval;
     const alignedStart = remainder === 0 ? startMinutes : startMinutes + (interval - remainder);
@@ -575,7 +639,54 @@ export default function CheckoutPage() {
       slots.push(`${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
     }
     return slots;
-  }, [storeSettings.openTime, storeSettings.closeTime]);
+  }, [storeSettings.openTime, storeSettings.closeTime, storeSettings.pickupSlotInterval, tempPickupDate]);
+
+  // Automatic payment switches to COD and QRIS/Transfer cannot be selected when grandTotal reaches 0
+  useEffect(() => {
+    if (grandTotal === 0) {
+      setPaymentMethod('COD');
+    }
+  }, [grandTotal]);
+
+  // Persist applied voucher code to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isVoucherRestored) {
+      if (appliedVoucher) {
+        localStorage.setItem('matchaboy_applied_voucher_code', appliedVoucher.code);
+      } else {
+        localStorage.removeItem('matchaboy_applied_voucher_code');
+      }
+    }
+  }, [appliedVoucher, isVoucherRestored]);
+
+  // Restore applied voucher code on mount/auth/vouchers load
+  useEffect(() => {
+    if (session?.user && userVouchers.length > 0 && !isVoucherRestored) {
+      const savedCode = localStorage.getItem('matchaboy_applied_voucher_code');
+      if (savedCode) {
+        const matched = usableVouchers.find(v => v.code === savedCode);
+        if (matched) {
+          setAppliedVoucher(matched);
+        } else {
+          fetch('/api/checkout/validate-voucher', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: savedCode }),
+          })
+          .then(async res => {
+            if (res.ok) {
+              const data = await res.json();
+              setAppliedVoucher(data.voucher);
+            } else {
+              localStorage.removeItem('matchaboy_applied_voucher_code');
+            }
+          })
+          .catch(() => {});
+        }
+      }
+      setIsVoucherRestored(true);
+    }
+  }, [session?.user?.id, userVouchers, usableVouchers, isVoucherRestored]);
 
   const getEndTime = (timeStr: string | null) => {
     if (!timeStr || timeStr === 'Sekarang') return '';
@@ -593,8 +704,9 @@ export default function CheckoutPage() {
       } else if (modalTimeSlots.length > 0) {
         setTempPickupTime(modalTimeSlots[0]);
       }
+      setTempPickupDate(pickupDate || (availableDates.length > 0 ? availableDates[0].value : null));
     }
-  }, [isScheduleModalOpen, pickupTime, modalTimeSlots]);
+  }, [isScheduleModalOpen, pickupTime, pickupDate, availableDates, modalTimeSlots]);
 
   const [tempHour, tempMin] = useMemo(() => {
     if (!tempPickupTime || tempPickupTime === 'Sekarang') {
@@ -718,6 +830,9 @@ export default function CheckoutPage() {
       if (!res.ok) throw new Error(responseData.error || 'Gagal membuat pesanan');
 
       clearCart();
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('matchaboy_pickup_warning_shown');
+      }
       
       // COD redirects straight to Order Tracking, online methods redirect to Payment detail page
       if (paymentMethod === 'COD') {
@@ -835,7 +950,12 @@ export default function CheckoutPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setShowPickupWarning(false)}
+                onClick={() => {
+                  setShowPickupWarning(false);
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('matchaboy_pickup_warning_shown', 'true');
+                  }
+                }}
                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#B48A5E] to-[#946F48] text-white font-bold text-sm shadow-md shadow-[#B48A5E]/10"
               >
                 Saya Mengerti
@@ -1197,29 +1317,44 @@ export default function CheckoutPage() {
               </div>
             )}
             
-            <button
-              type="button"
-              onClick={() => setIsVoucherModalOpen(true)}
-              className={`w-full bg-[#FFFBF4] border border-[#F5E3D0] px-5 py-4 flex items-center justify-between hover:bg-[#FFF8EE] active:scale-[0.99] transition-all text-left
-                ${hasUnusableVouchers ? 'rounded-b-2xl border-t-0' : 'rounded-2xl'}`}
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#FDF0DF] border border-[#F6D2B1] flex items-center justify-center text-[#C05621] shrink-0">
-                  <span className="font-extrabold text-base">%</span>
-                </div>
-                <div>
-                  <p className="font-bold text-sm text-[#5C3D2E]">
-                    {appliedVoucher ? appliedVoucher.description : 'Pakai Kode Voucher'}
-                  </p>
-                  {appliedVoucher && (
-                    <p className="text-[10px] text-[#C05621] font-extrabold uppercase tracking-widest mt-0.5">
-                      Kode: {appliedVoucher.code}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsVoucherModalOpen(true)}
+                className={`w-full bg-[#FFFBF4] border border-[#F5E3D0] pl-5 pr-12 py-4 flex items-center justify-between hover:bg-[#FFF8EE] active:scale-[0.99] transition-all text-left
+                  ${hasUnusableVouchers ? 'rounded-b-2xl border-t-0' : 'rounded-2xl'}`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-[#FDF0DF] border border-[#F6D2B1] flex items-center justify-center text-[#C05621] shrink-0">
+                    <span className="font-extrabold text-base">%</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-[#5C3D2E]">
+                      {appliedVoucher ? appliedVoucher.description : 'Pakai Kode Voucher'}
                     </p>
-                  )}
+                    {appliedVoucher && (
+                      <p className="text-[10px] text-[#C05621] font-extrabold uppercase tracking-widest mt-0.5">
+                        Kode: {appliedVoucher.code}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <ArrowRight className="w-5 h-5 text-[#8C7864]" />
-            </button>
+                {!appliedVoucher && <ArrowRight className="w-5 h-5 text-[#8C7864]" />}
+              </button>
+              {appliedVoucher && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAppliedVoucher(null);
+                    setToast({ message: 'Voucher dibatalkan', type: 'success' });
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors z-10 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div> {/* END LEFT COLUMN */}
 
@@ -1239,12 +1374,15 @@ export default function CheckoutPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {paymentConfig?.qris?.enabled && (
+                 {paymentConfig?.qris?.enabled && (
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('QRIS')}
+                    disabled={grandTotal === 0}
                     className={`flex flex-col items-center gap-1.5 p-4.5 rounded-2xl border-2 transition-all active:scale-[0.97]
-                      ${paymentMethod === 'QRIS'
+                      ${grandTotal === 0
+                        ? 'opacity-40 cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
+                        : paymentMethod === 'QRIS'
                         ? 'border-purple-500 bg-purple-50/50 text-purple-700 shadow-sm shadow-purple-100'
                         : 'border-gray-150 bg-white text-gray-500 hover:border-gray-250'}`}
                   >
@@ -1256,8 +1394,11 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('TRANSFER')}
+                    disabled={grandTotal === 0}
                     className={`flex flex-col items-center gap-1.5 p-4.5 rounded-2xl border-2 transition-all active:scale-[0.97]
-                      ${paymentMethod === 'TRANSFER'
+                      ${grandTotal === 0
+                        ? 'opacity-40 cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
+                        : paymentMethod === 'TRANSFER'
                         ? 'border-blue-500 bg-blue-50/50 text-blue-700 shadow-sm shadow-blue-100'
                         : 'border-gray-150 bg-white text-gray-500 hover:border-gray-250'}`}
                   >
@@ -1426,10 +1567,20 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => setIsScheduleModalOpen(true)}
-                  className="w-full mb-3.5 py-4 rounded-2xl border-2 border-[#946F48] text-[#946F48] font-bold text-xs bg-white hover:bg-[#FAF6EE]/50 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="w-full mb-3.5 py-4 rounded-2xl border-2 border-[#946F48] text-[#946F48] font-bold text-xs bg-white hover:bg-[#FAF6EE]/50 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Clock className="w-4.5 h-4.5 text-[#946F48]" />
-                  {pickupTime === 'Sekarang' ? 'Jadwalkan Waktu Ambil' : `Jam Ambil: ${pickupTime}`}
+                  {(() => {
+                    if (pickupTime === 'Sekarang') {
+                      return 'Ambil Sekarang';
+                    }
+                    if (!pickupDate || !pickupTime) {
+                      return 'Jadwalkan Waktu Ambil';
+                    }
+                    const matchedDate = availableDates.find(d => d.value === pickupDate);
+                    const dayLabel = matchedDate ? `${matchedDate.dayLabel}, ${matchedDate.label}` : pickupDate;
+                    return `Jadwal Ambil: ${dayLabel} @ ${pickupTime}`;
+                  })()}
                 </button>
               )}
 
@@ -1723,7 +1874,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Pickup Schedule Modal (Framer Motion spring based wheel) */}
+      {/* Pickup Schedule Modal (Framer Motion spring based wheel with Day Selector) */}
       <AnimatePresence>
         {isScheduleModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-end justify-center">
@@ -1749,7 +1900,7 @@ export default function CheckoutPage() {
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="flex flex-col items-center text-center mt-2 mb-6 select-none">
+              <div className="flex flex-col items-center text-center mt-2 mb-4 select-none">
                 <div className="w-14 h-14 rounded-2xl bg-[#FAF6EE] border border-[#EADFC9]/30 flex items-center justify-center mb-3.5">
                   <Clock className="w-7 h-7 text-[#946F48]" strokeWidth={1.8} />
                 </div>
@@ -1759,8 +1910,40 @@ export default function CheckoutPage() {
                 <p className="text-[11px] text-[#8C7864] font-bold mt-1 uppercase tracking-wider">
                   {tempPickupTime === 'Sekarang' 
                     ? 'Hari Ini, Sekarang' 
-                    : `Hari Ini, Jam ${tempPickupTime} - ${getEndTime(tempPickupTime)}`}
+                    : (() => {
+                        const matchedDate = availableDates.find(d => d.value === tempPickupDate);
+                        const dayLabel = matchedDate ? `${matchedDate.dayLabel}, ${matchedDate.label}` : tempPickupDate;
+                        return `${dayLabel}, Jam ${tempPickupTime} - ${getEndTime(tempPickupTime)}`;
+                      })()}
                 </p>
+              </div>
+
+              {/* Day Selector */}
+              <div className="mb-4 select-none">
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 pl-1">
+                  Pilih Hari
+                </label>
+                <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  {availableDates.map((date) => {
+                    const isSelected = tempPickupDate === date.value;
+                    return (
+                      <button
+                        key={date.value}
+                        type="button"
+                        onClick={() => {
+                          setTempPickupDate(date.value);
+                        }}
+                        className={`flex-1 min-w-[95px] p-3.5 rounded-2xl border text-center transition-all active:scale-95 cursor-pointer
+                          ${isSelected
+                            ? 'border-[#946F48] bg-[#FAF6EE] text-[#946F48] font-bold shadow-sm'
+                            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}
+                      >
+                        <p className="text-[9px] uppercase tracking-wider opacity-75">{date.dayLabel}</p>
+                        <p className="text-xs font-black mt-0.5">{date.label}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="relative border border-[#EADFC9]/30 bg-[#FAF6EE]/40 rounded-3xl p-4 mb-6 overflow-hidden">
@@ -1829,29 +2012,34 @@ export default function CheckoutPage() {
               </div>
 
               <div className="space-y-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPickupTime('Sekarang');
-                    setTempPickupTime('Sekarang');
-                    setIsScheduleModalOpen(false);
-                  }}
-                  className="w-full py-4 rounded-2xl border-2 border-[#946F48] text-[#946F48] font-bold text-xs hover:bg-[#FAF6EE]/50 active:scale-95 transition-all text-center"
-                >
-                  Pickup Sekarang
-                </button>
+                {tempPickupDate === new Date().toLocaleDateString('en-CA') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickupDate(new Date().toLocaleDateString('en-CA'));
+                      setPickupTime('Sekarang');
+                      setTempPickupTime('Sekarang');
+                      setIsScheduleModalOpen(false);
+                    }}
+                    className="w-full py-4 rounded-2xl border-2 border-[#946F48] text-[#946F48] font-bold text-xs hover:bg-[#FAF6EE]/50 active:scale-95 transition-all text-center cursor-pointer"
+                  >
+                    Pickup Sekarang
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={modalTimeSlots.length === 0}
                   onClick={() => {
                     if (tempPickupTime !== 'Sekarang') {
                       setPickupTime(tempPickupTime);
+                      setPickupDate(tempPickupDate);
                     } else {
                       setPickupTime('Sekarang');
+                      setPickupDate(tempPickupDate);
                     }
                     setIsScheduleModalOpen(false);
                   }}
-                  className="w-full py-4 rounded-2xl bg-[#946F48] text-white font-bold text-xs hover:bg-[#745432] active:scale-[0.98] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#946F48]/15"
+                  className="w-full py-4 rounded-2xl bg-[#946F48] text-white font-bold text-xs hover:bg-[#745432] active:scale-[0.98] transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#946F48]/15 cursor-pointer"
                 >
                   Gunakan Jadwal Ini
                 </button>

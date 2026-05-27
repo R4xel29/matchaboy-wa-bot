@@ -1508,8 +1508,8 @@ function AddressesSection({ user }: { user: UserShape }) {
     setEditingId(addr.id);
     setName(addr.name || '');
     setNotes(addr.notes || '');
-    setRecipient(addr.recipient || '');
-    setPhone(addr.phone || '');
+    setRecipient(addr.recipient || user.name || '');
+    setPhone(addr.phone || user.phone || '');
     setIsDefault(addr.isDefault || false);
 
     setMapLat(addr.lat || storeLat);

@@ -34,6 +34,8 @@ export async function GET() {
       storeAddress: settings.storeAddress,
       storeLat: settings.storeLat,
       storeLng: settings.storeLng,
+      operationalDays: settings.operationalDays || "[0,1,2,3,4,5,6]",
+      disabledDates: settings.disabledDates || "[]",
     })
   } catch {
     return NextResponse.json({
@@ -47,6 +49,8 @@ export async function GET() {
       storeAddress: 'Jl. Matcha No. 1, Jakarta Selatan',
       storeLat: -6.2088,
       storeLng: 106.8456,
+      operationalDays: "[0,1,2,3,4,5,6]",
+      disabledDates: "[]",
     })
   }
 }
@@ -84,6 +88,8 @@ export async function PUT(req: Request) {
           storeAddress: body.storeAddress ?? existing.storeAddress,
           storeLat: body.storeLat !== undefined ? body.storeLat : existing.storeLat,
           storeLng: body.storeLng !== undefined ? body.storeLng : existing.storeLng,
+          operationalDays: body.operationalDays !== undefined ? body.operationalDays : existing.operationalDays,
+          disabledDates: body.disabledDates !== undefined ? body.disabledDates : existing.disabledDates,
         },
       })
       return NextResponse.json(updated)
@@ -100,8 +106,9 @@ export async function PUT(req: Request) {
           storeAddress: body.storeAddress || 'Jl. Matcha No. 1, Jakarta Selatan',
           storeLat: body.storeLat ?? -6.2088,
           storeLng: body.storeLng ?? 106.8456,
+          operationalDays: body.operationalDays || '[0,1,2,3,4,5,6]',
+          disabledDates: body.disabledDates || '[]',
         },
-
       })
       return NextResponse.json(created)
     }
