@@ -491,6 +491,7 @@ model StoreSettings {
   storeLng            Float    @default(106.8456)
   operationalDays     String   @default("[0,1,2,3,4,5,6]") // 0=Sunday, 1=Monday, etc.
   disabledDates       String   @default("[]") // JSON array of YYYY-MM-DD strings
+  customHours         String   @default("{}") // JSON string of custom hours overrides
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

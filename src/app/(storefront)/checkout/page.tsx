@@ -160,8 +160,33 @@ export default function CheckoutPage() {
     deliveryFeePerKm: 2000, maxDeliveryDistance: 10,
     storeLat: -7.756928, storeLng: 113.211502,
     operationalDays: '[0,1,2,3,4,5,6]',
-    disabledDates: '[]'
+    disabledDates: '[]',
+    customHours: '{}'
   });
+
+  const getStoreHoursForDate = (dateStr: string) => {
+    let openT = storeSettings.openTime;
+    let closeT = storeSettings.closeTime;
+    try {
+      const custom = typeof storeSettings.customHours === 'string'
+        ? JSON.parse(storeSettings.customHours || '{}')
+        : storeSettings.customHours || {};
+
+      if (custom?.dates?.[dateStr]) {
+        openT = custom.dates[dateStr].openTime;
+        closeT = custom.dates[dateStr].closeTime;
+      } else {
+        const dayIdx = String(new Date(dateStr).getDay());
+        if (custom?.weekdays?.[dayIdx]) {
+          openT = custom.weekdays[dayIdx].openTime;
+          closeT = custom.weekdays[dayIdx].closeTime;
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing customHours:", e);
+    }
+    return { openTime: openT, closeTime: closeT };
+  };
 
   const availableDates = useMemo(() => {
     const dates: { value: string; label: string; dayLabel: string; isToday: boolean }[] = [];
@@ -192,7 +217,8 @@ export default function CheckoutPage() {
       const now = new Date();
       const isToday = dateString === now.toLocaleDateString('en-CA');
       if (isToday && isAvailable) {
-        const [closeH, closeM] = storeSettings.closeTime.split(':').map(Number);
+        const { closeTime: todayCloseTime } = getStoreHoursForDate(dateString);
+        const [closeH, closeM] = todayCloseTime.split(':').map(Number);
         const closeMinutes = closeH * 60 + closeM;
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         if (currentMinutes >= closeMinutes - 15) {
@@ -212,7 +238,7 @@ export default function CheckoutPage() {
       d.setDate(d.getDate() + 1);
     }
     return dates;
-  }, [storeSettings.operationalDays, storeSettings.disabledDates, storeSettings.closeTime]);
+  }, [storeSettings.operationalDays, storeSettings.disabledDates, storeSettings.openTime, storeSettings.closeTime, storeSettings.customHours]);
 
   useEffect(() => {
     if (availableDates.length > 0 && !pickupDate) {
@@ -613,8 +639,10 @@ export default function CheckoutPage() {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   const modalTimeSlots = useMemo(() => {
-    const [openH, openM] = storeSettings.openTime.split(':').map(Number);
-    const [closeH, closeM] = storeSettings.closeTime.split(':').map(Number);
+    const targetDate = tempPickupDate || new Date().toLocaleDateString('en-CA');
+    const { openTime: targetOpenTime, closeTime: targetCloseTime } = getStoreHoursForDate(targetDate);
+    const [openH, openM] = targetOpenTime.split(':').map(Number);
+    const [closeH, closeM] = targetCloseTime.split(':').map(Number);
 
     const openMinutes = openH * 60 + openM;
     const closeMinutes = closeH * 60 + closeM;
@@ -639,7 +667,7 @@ export default function CheckoutPage() {
       slots.push(`${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
     }
     return slots;
-  }, [storeSettings.openTime, storeSettings.closeTime, storeSettings.pickupSlotInterval, tempPickupDate]);
+  }, [storeSettings.openTime, storeSettings.closeTime, storeSettings.pickupSlotInterval, tempPickupDate, storeSettings.customHours]);
 
   // Automatic payment switches to COD and QRIS/Transfer cannot be selected when grandTotal reaches 0
   useEffect(() => {

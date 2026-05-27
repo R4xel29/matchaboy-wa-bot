@@ -36,6 +36,7 @@ export async function GET() {
       storeLng: settings.storeLng,
       operationalDays: settings.operationalDays || "[0,1,2,3,4,5,6]",
       disabledDates: settings.disabledDates || "[]",
+      customHours: settings.customHours || "{}",
     })
   } catch {
     return NextResponse.json({
@@ -51,6 +52,7 @@ export async function GET() {
       storeLng: 106.8456,
       operationalDays: "[0,1,2,3,4,5,6]",
       disabledDates: "[]",
+      customHours: "{}",
     })
   }
 }
@@ -90,6 +92,7 @@ export async function PUT(req: Request) {
           storeLng: body.storeLng !== undefined ? body.storeLng : existing.storeLng,
           operationalDays: body.operationalDays !== undefined ? body.operationalDays : existing.operationalDays,
           disabledDates: body.disabledDates !== undefined ? body.disabledDates : existing.disabledDates,
+          customHours: body.customHours !== undefined ? body.customHours : existing.customHours,
         },
       })
       return NextResponse.json(updated)
@@ -108,6 +111,7 @@ export async function PUT(req: Request) {
           storeLng: body.storeLng ?? 106.8456,
           operationalDays: body.operationalDays || '[0,1,2,3,4,5,6]',
           disabledDates: body.disabledDates || '[]',
+          customHours: body.customHours || '{}',
         },
       })
       return NextResponse.json(created)

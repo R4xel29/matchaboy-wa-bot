@@ -153,10 +153,10 @@ export default function ClaimVoucherClient({
 
               {/* Terms and Conditions */}
               <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 space-y-2 text-xs">
-                <h3 className="font-bold text-gray-700 flex items-center gap-1">
+                <h2 className="font-bold text-gray-700 flex items-center gap-1">
                   <Info className="w-3.5 h-3.5 text-[#B48A5E]" />
                   Syarat & Ketentuan
-                </h3>
+                </h2>
                 <ul className="list-disc pl-4 space-y-1 text-gray-500 font-medium">
                   {template.terms.split('\n').filter(t => t.trim().length > 0).map((term, index) => (
                     <li key={index}>{term}</li>
@@ -172,7 +172,7 @@ export default function ClaimVoucherClient({
               {/* Applicable Products */}
               {validProducts.length > 0 && validProducts.length < 20 && (
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Produk Terpilih</h3>
+                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Produk Terpilih</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {validProducts.map((p) => (
                       <span key={p.id} className="text-[10px] font-bold bg-[#B48A5E]/10 text-amber-900 px-2.5 py-1 rounded-lg">
@@ -195,7 +195,7 @@ export default function ClaimVoucherClient({
                 >
                   <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
                   <div className="space-y-1">
-                    <h3 className="font-bold text-emerald-950 text-sm">{success}</h3>
+                    <h2 className="font-bold text-emerald-950 text-sm">{success}</h2>
                     <p className="text-[11px] text-emerald-800 font-medium leading-relaxed">
                       Voucher telah ditambahkan ke akun Anda. Gunakan saat checkout untuk mendapatkan potongan harga.
                     </p>

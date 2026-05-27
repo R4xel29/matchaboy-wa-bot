@@ -20,9 +20,19 @@ export default function StoreSettingsPage() {
   const [storeLng, setStoreLng] = useState(113.211502);
   const [operationalDays, setOperationalDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [disabledDates, setDisabledDates] = useState<string[]>([]);
+  const [customHours, setCustomHours] = useState<{
+    weekdays?: { [key: string]: { openTime: string; closeTime: string } };
+    dates?: { [key: string]: { openTime: string; closeTime: string } };
+  }>({});
 
   // State for Calendar Navigation
   const [currentCalendarDate, setCurrentCalendarDate] = useState(() => new Date());
+
+  // Calendar Day Override settings Modal States
+  const [selectedCalDateStr, setSelectedCalDateStr] = useState<string | null>(null);
+  const [calDateOption, setCalDateOption] = useState<'NORMAL' | 'CLOSED' | 'CUSTOM'>('NORMAL');
+  const [calCustomOpen, setCalCustomOpen] = useState('08:00');
+  const [calCustomClose, setCalCustomClose] = useState('21:00');
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -95,6 +105,53 @@ export default function StoreSettingsPage() {
     );
   };
 
+  const handleCalendarDayClick = (dateStr: string) => {
+    setSelectedCalDateStr(dateStr);
+    const isClosed = disabledDates.includes(dateStr);
+    const custom = customHours.dates?.[dateStr];
+    
+    if (isClosed) {
+      setCalDateOption('CLOSED');
+    } else if (custom) {
+      setCalDateOption('CUSTOM');
+      setCalCustomOpen(custom.openTime);
+      setCalCustomClose(custom.closeTime);
+    } else {
+      setCalDateOption('NORMAL');
+      setCalCustomOpen('08:00');
+      setCalCustomClose('21:00');
+    }
+  };
+
+  const applyCalendarDaySettings = () => {
+    if (!selectedCalDateStr) return;
+    
+    if (calDateOption === 'NORMAL') {
+      setDisabledDates(prev => prev.filter(d => d !== selectedCalDateStr));
+      setCustomHours(prev => {
+        const dates = { ...(prev.dates || {}) };
+        delete dates[selectedCalDateStr];
+        return { ...prev, dates };
+      });
+    } else if (calDateOption === 'CLOSED') {
+      setDisabledDates(prev => prev.includes(selectedCalDateStr) ? prev : [...prev, selectedCalDateStr]);
+      setCustomHours(prev => {
+        const dates = { ...(prev.dates || {}) };
+        delete dates[selectedCalDateStr];
+        return { ...prev, dates };
+      });
+    } else if (calDateOption === 'CUSTOM') {
+      setDisabledDates(prev => prev.filter(d => d !== selectedCalDateStr));
+      setCustomHours(prev => {
+        const dates = { ...(prev.dates || {}) };
+        dates[selectedCalDateStr] = { openTime: calCustomOpen, closeTime: calCustomClose };
+        return { ...prev, dates };
+      });
+    }
+    
+    setSelectedCalDateStr(null);
+  };
+
   const prevMonth = () => {
     setCurrentCalendarDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
@@ -129,6 +186,13 @@ export default function StoreSettingsPage() {
             setDisabledDates(JSON.parse(d.disabledDates));
           } catch {
             setDisabledDates([]);
+          }
+        }
+        if (d.customHours) {
+          try {
+            setCustomHours(JSON.parse(d.customHours));
+          } catch {
+            setCustomHours({});
           }
         }
       })
@@ -231,7 +295,8 @@ export default function StoreSettingsPage() {
           storeLat,
           storeLng,
           operationalDays: JSON.stringify(operationalDays),
-          disabledDates: JSON.stringify(disabledDates)
+          disabledDates: JSON.stringify(disabledDates),
+          customHours: JSON.stringify(customHours)
         }),
       });
       if (res.ok) {
@@ -304,13 +369,89 @@ export default function StoreSettingsPage() {
                 );
               })}
             </div>
+
+            {/* Weekday Custom Hours Overrides */}
+            <div className="mt-4 space-y-3 bg-muted/20 p-4.5 rounded-2xl border border-border">
+              <h4 className="text-xs font-bold text-foreground">Jam Khusus Hari Tertentu (Opsional)</h4>
+              <p className="text-[11px] text-muted-foreground">Tentukan jam operasional khusus untuk hari operasional tertentu (kosongkan untuk menggunakan jam default toko).</p>
+              <div className="space-y-3">
+                {['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'].map((dayName, idx) => {
+                  const isOperational = operationalDays.includes(idx);
+                  if (!isOperational) return null;
+                  
+                  const hasOverride = !!customHours.weekdays?.[String(idx)];
+                  const overrideOpen = customHours.weekdays?.[String(idx)]?.openTime || '08:00';
+                  const overrideClose = customHours.weekdays?.[String(idx)]?.closeTime || '21:00';
+                  
+                  return (
+                    <div key={idx} className="flex items-center justify-between gap-4 py-2 border-b border-border last:border-0 flex-wrap sm:flex-nowrap">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`override-wd-${idx}`}
+                          checked={hasOverride}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setCustomHours(prev => {
+                              const weekdays = { ...(prev.weekdays || {}) };
+                              if (checked) {
+                                weekdays[String(idx)] = { openTime: '08:00', closeTime: '21:00' };
+                              } else {
+                                delete weekdays[String(idx)];
+                              }
+                              return { ...prev, weekdays };
+                            });
+                          }}
+                          className="rounded border-border text-brand-600 focus:ring-brand-500"
+                        />
+                        <label htmlFor={`override-wd-${idx}`} className="text-xs font-bold text-foreground cursor-pointer">
+                          Jam khusus hari {dayName}
+                        </label>
+                      </div>
+                      
+                      {hasOverride && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="time"
+                            value={overrideOpen}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCustomHours(prev => {
+                                const weekdays = { ...(prev.weekdays || {}) };
+                                weekdays[String(idx)] = { ...weekdays[String(idx)], openTime: val };
+                                return { ...prev, weekdays };
+                              });
+                            }}
+                            className="px-2 py-1 bg-background border border-border rounded-lg text-xs"
+                          />
+                          <span className="text-xs text-muted-foreground">s/d</span>
+                          <input
+                            type="time"
+                            value={overrideClose}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCustomHours(prev => {
+                                const weekdays = { ...(prev.weekdays || {}) };
+                                weekdays[String(idx)] = { ...weekdays[String(idx)], closeTime: val };
+                                return { ...prev, weekdays };
+                              });
+                            }}
+                            className="px-2 py-1 bg-background border border-border rounded-lg text-xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div>
             <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-brand-600" /> Kalender Libur & Penutupan Toko
             </h3>
-            <p className="text-xs text-muted-foreground mb-4">Klik tanggal pada kalender untuk menetapkannya sebagai hari libur nasional atau penutupan toko sementara.</p>
+            <p className="text-xs text-muted-foreground mb-4">Klik tanggal pada kalender untuk menetapkannya sebagai hari libur nasional atau mengatur jam buka khusus pada tanggal tersebut.</p>
             
             <div className="bg-background border border-border rounded-2xl p-4 max-w-sm mx-auto shadow-sm">
               {/* Calendar Header */}
@@ -349,6 +490,7 @@ export default function StoreSettingsPage() {
                   const dayOfWeek = date.getDay();
                   const isOffDay = !operationalDays.includes(dayOfWeek);
                   const isCustomClosed = disabledDates.includes(dateString);
+                  const customDateHours = customHours.dates?.[dateString];
                   const isToday = date.toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA');
                   
                   let buttonStyle = 'bg-transparent text-foreground hover:bg-muted';
@@ -357,6 +499,9 @@ export default function StoreSettingsPage() {
                   if (isCustomClosed) {
                     buttonStyle = 'bg-red-500 text-white hover:bg-red-600 shadow-sm font-bold';
                     statusText = 'Tutup';
+                  } else if (customDateHours) {
+                    buttonStyle = 'bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold';
+                    statusText = `${customDateHours.openTime}`;
                   } else if (isOffDay) {
                     buttonStyle = 'bg-amber-100 text-amber-700 opacity-80 cursor-not-allowed';
                     statusText = 'Libur';
@@ -373,7 +518,7 @@ export default function StoreSettingsPage() {
                       key={idx}
                       type="button"
                       disabled={isOffDay}
-                      onClick={() => toggleDisabledDate(dateString)}
+                      onClick={() => handleCalendarDayClick(dateString)}
                       className={`h-10 relative flex flex-col items-center justify-center rounded-xl text-xs transition-all cursor-pointer ${buttonStyle}`}
                     >
                       <span>{date.getDate()}</span>
@@ -401,6 +546,35 @@ export default function StoreSettingsPage() {
                         type="button"
                         onClick={() => toggleDisabledDate(dateStr)}
                         className="text-red-400 hover:text-red-700 font-bold ml-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Object.keys(customHours.dates || {}).length > 0 && (
+              <div className="mt-4 space-y-2">
+                <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Daftar Tanggal Jam Khusus:</span>
+                <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
+                  {Object.entries(customHours.dates || {}).map(([dateStr, hours]) => (
+                    <span
+                      key={dateStr}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 text-[11px] font-bold"
+                    >
+                      {new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ({hours.openTime} - {hours.closeTime})
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomHours(prev => {
+                            const dates = { ...(prev.dates || {}) };
+                            delete dates[dateStr];
+                            return { ...prev, dates };
+                          });
+                        }}
+                        className="text-emerald-400 hover:text-emerald-700 font-bold ml-0.5"
                       >
                         ×
                       </button>
@@ -518,6 +692,112 @@ export default function StoreSettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Calendar Date Option Modal */}
+      <AnimatePresence>
+        {selectedCalDateStr && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card w-full max-w-sm rounded-2xl border border-border p-6 shadow-2xl space-y-4"
+            >
+              <div>
+                <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4 text-brand-600" />
+                  Atur Tanggal: {new Date(selectedCalDateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </h3>
+                <p className="text-[11px] text-muted-foreground mt-1">Pilih status operasional toko untuk tanggal ini.</p>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setCalDateOption('NORMAL')}
+                  className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                    calDateOption === 'NORMAL'
+                      ? 'border-brand-500 bg-brand-50/50 text-brand-700 font-bold'
+                      : 'border-border bg-background text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span>Buka Normal (Sesuai Jam default)</span>
+                  {calDateOption === 'NORMAL' && <span className="w-2 h-2 rounded-full bg-brand-600" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCalDateOption('CLOSED')}
+                  className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                    calDateOption === 'CLOSED'
+                      ? 'border-red-500 bg-red-50/50 text-red-700 font-bold'
+                      : 'border-border bg-background text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span>Tutup Toko (Libur)</span>
+                  {calDateOption === 'CLOSED' && <span className="w-2 h-2 rounded-full bg-red-600" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCalDateOption('CUSTOM')}
+                  className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                    calDateOption === 'CUSTOM'
+                      ? 'border-emerald-500 bg-emerald-50/50 text-emerald-700 font-bold'
+                      : 'border-border bg-background text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span>Jam Buka Khusus</span>
+                  {calDateOption === 'CUSTOM' && <span className="w-2 h-2 rounded-full bg-emerald-600" />}
+                </button>
+              </div>
+
+              {calDateOption === 'CUSTOM' && (
+                <div className="p-3 bg-muted/20 border border-border rounded-xl space-y-2.5">
+                  <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Atur Jam Buka Khusus:</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] font-bold text-muted-foreground mb-1">JAM BUKA</label>
+                      <input
+                        type="time"
+                        value={calCustomOpen}
+                        onChange={(e) => setCalCustomOpen(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-border bg-background rounded-lg text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-muted-foreground mb-1">JAM TUTUP</label>
+                      <input
+                        type="time"
+                        value={calCustomClose}
+                        onChange={(e) => setCalCustomClose(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-border bg-background rounded-lg text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCalDateStr(null)}
+                  className="flex-1 px-4 py-2.5 border border-border bg-background text-muted-foreground rounded-xl text-xs font-semibold hover:text-foreground transition-all active:scale-95"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={applyCalendarDaySettings}
+                  className="flex-1 px-4 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition-all shadow-md shadow-brand-600/10 active:scale-95"
+                >
+                  Terapkan
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Saving Loader Overlay Screen */}
       <AnimatePresence>

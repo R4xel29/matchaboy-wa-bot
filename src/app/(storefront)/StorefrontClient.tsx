@@ -264,9 +264,9 @@ export default function StorefrontClient({
               <span className="text-[10px] font-black uppercase text-[#A69F94] tracking-[0.2em] select-none">
                 {isNight ? 'Selamat Malam 🌃' : 'Selamat Siang ☀️'}
               </span>
-              <h2 className="font-serif text-3xl font-black text-gray-900 tracking-tight">
+              <h1 className="font-serif text-3xl font-black text-gray-900 tracking-tight">
                 Hai, <span className="text-[#2E5A44]">{userName}</span> <span className="text-2xl animate-pulse">👋</span>
-              </h2>
+              </h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex flex-col text-right select-none">
@@ -298,7 +298,6 @@ export default function StorefrontClient({
               fill
               className="object-cover group-hover:scale-[1.02] transition-transform duration-1000 ease-out"
               priority
-              unoptimized
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&q=80&w=1200';
               }}

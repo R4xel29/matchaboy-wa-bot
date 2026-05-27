@@ -209,7 +209,7 @@ export default function VoucherDetailClient({ voucher, products }: { voucher: an
               📋
             </div>
             <div className="text-left">
-              <h4 className="text-xs font-bold text-gray-800">Syarat & Ketentuan</h4>
+              <h3 className="text-xs font-bold text-gray-800">Syarat & Ketentuan</h3>
               <p className="text-[10px] text-gray-400 font-medium mt-0.5">Lihat detail aturan penggunaan voucher ini</p>
             </div>
           </div>
@@ -305,7 +305,7 @@ export default function VoucherDetailClient({ voucher, products }: { voucher: an
               <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4 shrink-0" />
               
               <div className="px-6 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                <h3 className="font-serif text-lg font-bold text-gray-900">Syarat & Ketentuan</h3>
+                <h2 className="font-serif text-lg font-bold text-gray-900">Syarat & Ketentuan</h2>
                 <button
                   onClick={() => setIsTnCOpen(false)}
                   className="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors"

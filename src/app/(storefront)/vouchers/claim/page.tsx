@@ -19,7 +19,7 @@ export default async function VoucherClaimPage({ searchParams }: PageProps) {
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl">
             ⚠️
           </div>
-          <h2 className="font-serif font-black text-gray-900 text-lg">Kode Voucher Diperlukan</h2>
+          <h1 className="font-serif font-black text-gray-900 text-lg">Kode Voucher Diperlukan</h1>
           <p className="text-xs text-gray-500 leading-relaxed">
             Tidak ada kode voucher yang terdeteksi di link klaim Anda. Mohon pastikan link yang Anda buka sudah benar.
           </p>
@@ -48,7 +48,7 @@ export default async function VoucherClaimPage({ searchParams }: PageProps) {
           <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto text-xl font-bold">
             ✕
           </div>
-          <h2 className="font-serif font-black text-gray-900 text-lg">Voucher Tidak Valid</h2>
+          <h1 className="font-serif font-black text-gray-900 text-lg">Voucher Tidak Valid</h1>
           <p className="text-xs text-gray-500 leading-relaxed">
             Maaf, template voucher dengan kode <strong className="font-bold text-gray-700">"{cleanCode}"</strong> tidak ditemukan atau sudah tidak aktif.
           </p>
