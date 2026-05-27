@@ -13,7 +13,14 @@ export default async function AdminCashierOrdersPage() {
 
   const orders = await prisma.order.findMany({
     where: {
-      createdAt: { gte: startOfDay },
+      OR: [
+        { createdAt: { gte: startOfDay } },
+        {
+          status: {
+            in: ['PENDING', 'PENDING_PAYMENT', 'PREPARING', 'READY', 'ASSIGNED', 'TO_STORE', 'PICKED_UP', 'ON_DELIVERY']
+          }
+        }
+      ]
     },
     include: {
       items: { include: { product: true } },
@@ -35,6 +42,9 @@ export default async function AdminCashierOrdersPage() {
     status: o.status,
     createdAt: o.createdAt.toISOString(),
     paymentProofUrl: o.paymentProofUrl,
+    pickupDate: o.pickupDate ? o.pickupDate.toISOString() : null,
+    pickupTime: o.pickupTime,
+    queueNumber: o.queueNumber,
     items: o.items.map((item) => ({
       id: item.id,
       qty: item.qty,
@@ -47,5 +57,6 @@ export default async function AdminCashierOrdersPage() {
     initialOrders={mappedOrders} 
     storeLat={storeSettings?.storeLat || -6.2088}
     storeLng={storeSettings?.storeLng || 106.8456}
+    initialPickupAlarmLeadTime={storeSettings?.pickupAlarmLeadTime ?? 30}
   />;
 }

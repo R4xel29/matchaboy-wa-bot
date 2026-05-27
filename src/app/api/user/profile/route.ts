@@ -15,6 +15,7 @@ export async function GET() {
                 id: true, name: true, email: true, phone: true,
                 gender: true, birthDate: true,
                 referralCode: true, points: true, role: true,
+                image: true,
                 accounts: {
                     select: { provider: true }
                 },
@@ -48,7 +49,8 @@ export async function GET() {
             points: user.points,
             role: user.role,
             isGoogleConnected,
-            driverProfile: user.driverProfile
+            driverProfile: user.driverProfile,
+            image: user.image
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -63,7 +65,7 @@ export async function PUT(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { name, email, phone, gender, birthDate, vehicleType, plateNumber, driverImageUrl } = body;
+        const { name, email, phone, gender, birthDate, vehicleType, plateNumber, driverImageUrl, image } = body;
 
         const data: any = {};
         if (name !== undefined) data.name = name;
@@ -74,13 +76,20 @@ export async function PUT(req: NextRequest) {
         }
         if (gender !== undefined) data.gender = gender;
         if (birthDate !== undefined) data.birthDate = birthDate ? new Date(birthDate) : null;
+        if (image !== undefined) data.image = image;
 
         // Update driver profile details if the logged in user is a driver
         if (session.user.role === 'DRIVER') {
             const driverData: any = {};
             if (vehicleType !== undefined) driverData.vehicleType = vehicleType;
             if (plateNumber !== undefined) driverData.plateNumber = plateNumber;
-            if (driverImageUrl !== undefined) driverData.driverImageUrl = driverImageUrl;
+            
+            // Sync image to driverImageUrl and vice-versa
+            const finalImageUrl = driverImageUrl !== undefined ? driverImageUrl : image;
+            if (finalImageUrl !== undefined) {
+                driverData.driverImageUrl = finalImageUrl;
+                data.image = finalImageUrl;
+            }
 
             if (Object.keys(driverData).length > 0) {
                 data.driverProfile = {
@@ -88,7 +97,7 @@ export async function PUT(req: NextRequest) {
                         create: {
                             vehicleType: vehicleType || 'Motor',
                             plateNumber: plateNumber || '',
-                            driverImageUrl: driverImageUrl || null,
+                            driverImageUrl: finalImageUrl || null,
                             status: 'APPROVED',
                         },
                         update: driverData
@@ -118,7 +127,8 @@ export async function PUT(req: NextRequest) {
             gender: user.gender,
             birthDate: user.birthDate,
             isGoogleConnected,
-            driverProfile: user.driverProfile
+            driverProfile: user.driverProfile,
+            image: user.image
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

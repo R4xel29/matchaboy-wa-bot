@@ -17,6 +17,7 @@ export const authConfig = {
                 token.phone = (user as any).phone
                 token.name = (user as any).name
                 token.email = (user as any).email
+                token.image = (user as any).image
             }
             return token
         },
@@ -28,6 +29,7 @@ export const authConfig = {
                 ;(session.user as any).phone = token.phone as string
                 session.user.name = token.name as string
                 session.user.email = token.email as string
+                session.user.image = token.image as string
                 ;(session.user as any).sessionToken = token.sessionToken as string
             }
             return session

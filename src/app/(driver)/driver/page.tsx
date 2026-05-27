@@ -30,6 +30,10 @@ interface Order {
   status: string;
   items: OrderItem[];
   createdAt: string;
+  paymentMethod: string;
+  user?: {
+    image: string | null;
+  } | null;
 }
 
 const formatWhatsAppNumber = (phone: string) => {
@@ -170,15 +174,22 @@ export default function DriverDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  // PIN Verification Modal States
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinOrderId, setPinOrderId] = useState<string | null>(null);
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [verifyingPin, setVerifyingPin] = useState(false);
   
   // Sound notification system
   const { startLoop, stopLoop, isSoundPlaying } = useOrderNotificationSound();
   const [soundDismissed, setSoundDismissed] = useState(false);
   const prevAssignedIdsRef = useRef<Set<string>>(new Set());
   
-  // GPS Coords
-  const [driverLat, setDriverLat] = useState(-6.2088);
-  const [driverLng, setDriverLng] = useState(106.8456);
+  // GPS Coords default to Probolinggo
+  const [driverLat, setDriverLat] = useState(-7.78125167);
+  const [driverLng, setDriverLng] = useState(113.212266);
 
   // Profile Edit States
   const [profile, setProfile] = useState<any>(null);
@@ -212,6 +223,11 @@ export default function DriverDashboardPage() {
         if (data.driverProfile) {
           setIsOnline(data.driverProfile.isOnline);
           setDriverStatus(data.driverProfile.status || 'APPROVED');
+          
+          if (data.driverProfile.lastLat && data.driverProfile.lastLng) {
+            setDriverLat(data.driverProfile.lastLat);
+            setDriverLng(data.driverProfile.lastLng);
+          }
           
           // Populate profile form states
           setName(data.name || '');
@@ -348,7 +364,23 @@ export default function DriverDashboardPage() {
     }
   };
 
-  const advanceOrderStatus = async (orderId: string, currentStatus: string) => {
+  const handleStartAdvanceStatus = (order: Order) => {
+    // If it's a COD order and status is ON_DELIVERY (meaning next status is DELIVERED/complete)
+    // we require PIN verification!
+    const isCod = order.paymentMethod === 'COD';
+    if (order.status === 'ON_DELIVERY' && isCod) {
+      setPinOrderId(order.id);
+      setEnteredPin('');
+      setPinError('');
+      setShowPinModal(true);
+      return;
+    }
+
+    // Otherwise, proceed normally
+    advanceOrderStatus(order.id, order.status);
+  };
+
+  const advanceOrderStatus = async (orderId: string, currentStatus: string, pinCode?: string) => {
     const nextStatusMap: Record<string, string> = {
       'ASSIGNED': 'PICKED_UP',
       'PICKED_UP': 'ON_DELIVERY',
@@ -358,23 +390,44 @@ export default function DriverDashboardPage() {
     const nextStatus = nextStatusMap[currentStatus];
     if (!nextStatus) return;
 
-    setUpdatingStatus(orderId);
+    if (pinCode) {
+      setVerifyingPin(true);
+    } else {
+      setUpdatingStatus(orderId);
+    }
+    
     try {
       const res = await fetch(`/api/driver/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
+        body: JSON.stringify({ status: nextStatus, pin: pinCode })
       });
       
+      const data = await res.json();
       if (res.ok) {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: nextStatus } : o));
         showToast('Status pesanan berhasil diperbarui', 'success');
+        if (pinCode) {
+          setShowPinModal(false);
+          setPinOrderId(null);
+        }
+      } else {
+        if (pinCode) {
+          setPinError(data.error || 'Gagal memproses verifikasi PIN.');
+        } else {
+          showToast(data.error || 'Gagal update status pesanan', 'error');
+        }
       }
     } catch (err) {
       console.error(err);
-      showToast('Gagal update status pesanan', 'error');
+      if (pinCode) {
+        setPinError('Terjadi kesalahan koneksi. Coba lagi.');
+      } else {
+        showToast('Gagal update status pesanan', 'error');
+      }
     } finally {
       setUpdatingStatus(null);
+      setVerifyingPin(false);
     }
   };
 
@@ -480,8 +533,51 @@ export default function DriverDashboardPage() {
     }
   };
 
-  const activeDeliveries = useMemo(() => orders.filter(o => o.status !== 'DELIVERED'), [orders]);
-  const completedDeliveries = useMemo(() => orders.filter(o => o.status === 'DELIVERED'), [orders]);
+  const activeDeliveriesSorted = useMemo(() => {
+    const uncompleted = orders.filter(o => o.status !== 'DELIVERED' && o.status !== 'COMPLETED' && o.status !== 'CANCELLED');
+    
+    const statusWeight: Record<string, number> = {
+      'ON_DELIVERY': 3,
+      'PICKED_UP': 2,
+      'ASSIGNED': 1
+    };
+
+    return [...uncompleted].sort((a, b) => {
+      const weightA = statusWeight[a.status] || 0;
+      const weightB = statusWeight[b.status] || 0;
+      
+      if (weightB !== weightA) {
+        return weightB - weightA;
+      }
+      
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+  }, [orders]);
+
+  const mapStops = useMemo(() => {
+    return activeDeliveriesSorted.map((order, index) => {
+      let destLat = -7.78125167;
+      let destLng = 113.212266;
+      if (order.address) {
+        const coordMatch = order.address.match(/\((-?\d+\.?\d*),\s*(-?\d+\.?\d*)\)/);
+        if (coordMatch) {
+          destLat = parseFloat(coordMatch[1]);
+          destLng = parseFloat(coordMatch[2]);
+        }
+      }
+      return {
+        id: order.id,
+        customerName: order.customerName,
+        address: order.address || '',
+        lat: destLat,
+        lng: destLng,
+        status: order.status,
+        sequence: index + 1
+      };
+    });
+  }, [activeDeliveriesSorted]);
+
+  const completedDeliveries = useMemo(() => orders.filter(o => o.status === 'DELIVERED' || o.status === 'COMPLETED'), [orders]);
 
   if (loading) {
     return (
@@ -578,37 +674,42 @@ export default function DriverDashboardPage() {
               )}
             </AnimatePresence>
 
+            {/* Unified Map at the top of deliveries tab */}
+            {isOnline && activeDeliveriesSorted.length > 0 && (
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-border/40 space-y-3">
+                <h3 className="font-bold text-gray-950 text-sm flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-[#B48A5E]" />
+                  Peta Navigasi Terpadu
+                </h3>
+                <DriverNavigationMap
+                  driverLat={driverLat}
+                  driverLng={driverLng}
+                  stops={mapStops}
+                />
+              </div>
+            )}
+
             {/* Active Orders List */}
             <div className="space-y-4">
               <h3 className="font-bold text-gray-950 flex items-center gap-2">
                 <Truck className="w-4 h-4 text-[#B48A5E]" />
-                Daftar Antaran ({activeDeliveries.length})
+                Daftar Antaran ({activeDeliveriesSorted.length})
               </h3>
 
-              {!isOnline && activeDeliveries.length === 0 ? (
+              {!isOnline && activeDeliveriesSorted.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-gray-200">
                   <Power className="w-8 h-8 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm font-medium text-gray-500">Aktifkan shift untuk menerima pesanan</p>
                 </div>
-              ) : activeDeliveries.length === 0 ? (
+              ) : activeDeliveriesSorted.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-gray-200">
                   <Check className="w-8 h-8 text-emerald-300 mx-auto mb-3" />
                   <p className="text-sm font-medium text-gray-500">Tidak ada antaran aktif</p>
                 </div>
               ) : (
-                activeDeliveries.map((order) => {
+                activeDeliveriesSorted.map((order, index) => {
                   const btnConfig = getStatusButtonConfig(order.status);
                   const Icon = btnConfig?.icon || Check;
-
-                  let destLat = -7.756928;
-                  let destLng = 113.211502;
-                  if (order.address) {
-                    const coordMatch = order.address.match(/\((-?\d+\.?\d*),\s*(-?\d+\.?\d*)\)/);
-                    if (coordMatch) {
-                      destLat = parseFloat(coordMatch[1]);
-                      destLng = parseFloat(coordMatch[2]);
-                    }
-                  }
 
                   return (
                     <motion.div
@@ -629,12 +730,35 @@ export default function DriverDashboardPage() {
                       
                       <div className="p-5">
                         <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <p className="text-[10px] font-bold text-[#B48A5E] uppercase tracking-wider mb-1">
-                              Order #{order.id.slice(-4).toUpperCase()}
-                            </p>
-                            <h4 className="font-bold text-gray-900 text-sm">{order.customerName}</h4>
-                            <p className="text-xs text-gray-500 mt-0.5">{order.items.length} item • {formatRupiah(order.total)}</p>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 overflow-hidden shadow-sm">
+                              {order.user?.image ? (
+                                <img src={order.user.image} alt={order.customerName} className="w-full h-full object-cover" />
+                              ) : (
+                                <User className="w-5 h-5 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-extrabold text-[#B48A5E] uppercase tracking-wider">
+                                  Order #{order.id.slice(-4).toUpperCase()}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-red-100 border border-red-200 text-[9px] font-extrabold text-red-750 uppercase">
+                                  Stop {index + 1}
+                                </span>
+                                {order.paymentMethod === 'COD' ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-rose-55 border border-rose-200 text-[9px] font-extrabold text-rose-700 uppercase">
+                                    COD
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[9px] font-extrabold text-emerald-700 uppercase">
+                                    {order.paymentMethod}
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="font-bold text-gray-900 text-sm">{order.customerName}</h4>
+                              <p className="text-xs text-gray-500">{order.items.length} item • {formatRupiah(order.total)}</p>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <a href={`tel:${order.customerPhone}`} className="p-2.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Hubungi Telepon">
@@ -655,25 +779,13 @@ export default function DriverDashboardPage() {
                         <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3 mb-4">
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                           <p className="text-xs font-medium text-gray-700 leading-relaxed">
-                            {order.address || 'Alamat tidak tersedia'}
+                            {order.address?.split('(')[0]?.trim() || order.address || 'Alamat tidak tersedia'}
                           </p>
                         </div>
 
-                        {order.status === 'ON_DELIVERY' && (
-                          <div className="mb-4">
-                            <DriverNavigationMap
-                              driverLat={driverLat}
-                              driverLng={driverLng}
-                              destinationLat={destLat}
-                              destinationLng={destLng}
-                              destinationAddress={order.address?.split('(')[0]?.trim() || order.address || ''}
-                            />
-                          </div>
-                        )}
-
                         {btnConfig && (
                           <button
-                            onClick={() => advanceOrderStatus(order.id, order.status)}
+                            onClick={() => handleStartAdvanceStatus(order)}
                             disabled={updatingStatus === order.id}
                             className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-70 ${btnConfig.color}`}
                           >
@@ -726,18 +838,27 @@ export default function DriverDashboardPage() {
                 return (
                   <div key={order.id} className="bg-white rounded-3xl border border-border/40 p-5 shadow-sm space-y-4">
                     <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">
-                            Order #{order.id.slice(-4).toUpperCase()}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-[9px] font-extrabold text-emerald-700 uppercase">
-                            Selesai
-                          </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 overflow-hidden shadow-sm">
+                          {order.user?.image ? (
+                            <img src={order.user.image} alt={order.customerName} className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-5 h-5 text-gray-400" />
+                          )}
                         </div>
-                        <h4 className="font-bold text-gray-950 text-sm mt-1">{order.customerName}</h4>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-400 font-medium mt-0.5">
-                          <Clock className="w-3 h-3" /> {formattedDate}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase">
+                              Order #{order.id.slice(-4).toUpperCase()}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-[9px] font-extrabold text-emerald-700 uppercase">
+                              Selesai
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-gray-950 text-sm mt-0.5">{order.customerName}</h4>
+                          <div className="flex items-center gap-1 text-[10px] text-gray-400 font-medium mt-0.5">
+                            <Clock className="w-3 h-3" /> {formattedDate}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -1017,6 +1138,81 @@ export default function DriverDashboardPage() {
           <span className="text-[10px]">Profil</span>
         </button>
       </div>
+
+      {/* PIN Verification Modal for COD Orders */}
+      <AnimatePresence>
+        {showPinModal && pinOrderId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden p-6 border border-gray-100"
+            >
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-amber-50 border border-amber-100 rounded-full flex items-center justify-center mx-auto text-amber-500">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-gray-950">Verifikasi PIN COD</h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Silakan masukkan 4-digit PIN yang tertera pada layar pelacakan konsumen untuk menyelesaikan pesanan ini.
+                  </p>
+                </div>
+
+                {pinError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-650 font-semibold">
+                    {pinError}
+                  </div>
+                )}
+
+                <div className="py-2">
+                  <input
+                    type="text"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={enteredPin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setEnteredPin(val);
+                    }}
+                    placeholder="0 0 0 0"
+                    className="w-48 mx-auto tracking-[1.5em] text-center font-mono font-black text-2xl px-3 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-[#B48A5E]/15 focus:border-[#B48A5E] outline-none text-gray-800"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPinModal(false);
+                      setPinOrderId(null);
+                    }}
+                    disabled={verifyingPin}
+                    className="flex-1 py-3 px-4 border border-gray-200 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => advanceOrderStatus(pinOrderId, 'ON_DELIVERY', enteredPin)}
+                    disabled={verifyingPin || enteredPin.length !== 4}
+                    className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {verifyingPin ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    Verifikasi
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

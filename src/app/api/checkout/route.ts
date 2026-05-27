@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, getClientId } from '@/lib/rate-limit'
+import { calculateDeliveryFee } from '@/lib/delivery-utils'
+
 
 const formatCurrency = (n: number) => `Rp${n.toLocaleString('id-ID')}`
 
@@ -138,7 +140,7 @@ export async function POST(req: Request) {
             if (!body.address?.streetDetail || !body.address.streetDetail.trim()) {
                  return NextResponse.json({ error: `Detail alamat tambahan (No. Rumah / Komplek) wajib diisi untuk Delivery` }, { status: 400 })
             }
-            deliveryFee = Math.round(distanceKm * perKmFee)
+            deliveryFee = calculateDeliveryFee(distanceKm, perKmFee)
         }
 
         // Fetch loyalty settings
@@ -505,6 +507,17 @@ export async function POST(req: Request) {
             }
 
             // 3. Create the order
+            const startOfDay = new Date()
+            startOfDay.setHours(0, 0, 0, 0)
+            const countToday = await tx.order.count({
+                where: {
+                    createdAt: { gte: startOfDay }
+                }
+            })
+            const nextSeq = String(countToday + 1).padStart(3, '0')
+            const prefix = orderType === 'PICKUP' ? 'PKP' : 'DLV'
+            const queueNumber = `${prefix}-${nextSeq}`
+
             const newOrder = await tx.order.create({
                 data: {
                     userId: session.user.id,
@@ -525,6 +538,7 @@ export async function POST(req: Request) {
                     notes: body.notes || null,
                     voucherCode: voucherCode || null,
                     paymentExpiredAt: (isDoku || body.paymentMethod?.toUpperCase() === 'QRIS' || body.paymentMethod?.toUpperCase() === 'TRANSFER') ? new Date(Date.now() + 15 * 60 * 1000) : null,
+                    queueNumber,
                     items: {
                         create: orderItemsToCreate
                     }

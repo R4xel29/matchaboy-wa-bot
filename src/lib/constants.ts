@@ -4,9 +4,9 @@ import type { Category, Product, StoreLocation, AddOn } from '@/types';
 
 export const STORE: StoreLocation = {
     name: 'Arus HQ',
-    lat: -6.2088,    // Jakarta
-    lng: 106.8456,
-    address: 'Jl. Arum No. 1, Jakarta Selatan',
+    lat: -7.78125167,    // Probolinggo
+    lng: 113.212266,
+    address: 'Jl. Mastrip No 357, Probolinggo',
 };
 
 export const DELIVERY_CONFIG = {

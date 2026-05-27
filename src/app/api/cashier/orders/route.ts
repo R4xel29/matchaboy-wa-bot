@@ -14,7 +14,16 @@ export async function GET() {
     startOfDay.setHours(0, 0, 0, 0);
 
     const orders = await prisma.order.findMany({
-      where: { createdAt: { gte: startOfDay } },
+      where: {
+        OR: [
+          { createdAt: { gte: startOfDay } },
+          {
+            status: {
+              in: ['PENDING', 'PENDING_PAYMENT', 'PREPARING', 'READY', 'ASSIGNED', 'TO_STORE', 'PICKED_UP', 'ON_DELIVERY']
+            }
+          }
+        ]
+      },
       include: { items: { include: { product: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -32,6 +41,9 @@ export async function GET() {
       cancelReason: o.cancelReason,
       createdAt: o.createdAt.toISOString(),
       paymentProofUrl: o.paymentProofUrl,
+      pickupDate: o.pickupDate ? o.pickupDate.toISOString() : null,
+      pickupTime: o.pickupTime,
+      queueNumber: o.queueNumber,
       items: o.items.map((item) => ({
         id: item.id,
         qty: item.qty,
@@ -40,7 +52,10 @@ export async function GET() {
       })),
     }));
 
-    return NextResponse.json({ orders: mappedOrders });
+    const settings = await prisma.storeSettings.findFirst();
+    const pickupAlarmLeadTime = settings?.pickupAlarmLeadTime ?? 30;
+
+    return NextResponse.json({ orders: mappedOrders, pickupAlarmLeadTime });
   } catch (error) {
     console.error('Cashier orders polling error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
@@ -162,28 +177,42 @@ export async function POST(req: Request) {
       initialStatus = 'ASSIGNED'
     }
 
-    // Create the order
-    const order = await prisma.order.create({
-      data: {
-        userId: null, // POS orders don't need a user
-        cashierId: session.user.id,
-        orderType,
-        source: 'POS',
-        customerName: body.customerName,
-        customerPhone: body.customerPhone || '-',
-        address: body.address || '',
-        tableNumber: body.tableNumber || null,
-        notes: body.notes || null,
-        subtotal: secureSubtotal,
-        deliveryFee,
-        total: secureTotal,
-        paymentMethod: body.paymentMethod || 'CASH',
-        status: initialStatus,
-        hasTumbler,
-        items: {
-          create: orderItemsToCreate
+    // Create the order with sequential queue number in a transaction
+    const order = await prisma.$transaction(async (tx) => {
+      const startOfDay = new Date()
+      startOfDay.setHours(0, 0, 0, 0)
+      const countToday = await tx.order.count({
+        where: {
+          createdAt: { gte: startOfDay }
         }
-      }
+      })
+      const nextSeq = String(countToday + 1).padStart(3, '0')
+      const prefix = orderType === 'DELIVERY' ? 'DLV' : 'POS'
+      const queueNumber = `${prefix}-${nextSeq}`
+
+      return await tx.order.create({
+        data: {
+          userId: null, // POS orders don't need a user
+          cashierId: session.user.id,
+          orderType,
+          source: 'POS',
+          customerName: body.customerName,
+          customerPhone: body.customerPhone || '-',
+          address: body.address || '',
+          tableNumber: body.tableNumber || null,
+          notes: body.notes || null,
+          subtotal: secureSubtotal,
+          deliveryFee,
+          total: secureTotal,
+          paymentMethod: body.paymentMethod || 'CASH',
+          status: initialStatus,
+          hasTumbler,
+          queueNumber,
+          items: {
+            create: orderItemsToCreate
+          }
+        }
+      })
     })
 
     // Update shift stats if cashier has an active shift

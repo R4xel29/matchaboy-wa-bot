@@ -48,6 +48,7 @@ export type TrackingOrderShape = {
   hasTumbler?: boolean;
   adminWhatsApp?: string;
   paymentUrl?: string;
+  queueNumber?: string | null;
 };
 
 type OrderStep = {
@@ -195,23 +196,6 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
   };
 
 
-  const swipeContainerRef = useRef<HTMLDivElement>(null);
-  const [swipeDragWidth, setSwipeDragWidth] = useState(0);
-  const swipeX = useMotionValue(0);
-  const swipeTextOpacity = useTransform(swipeX, [0, 150], [1, 0]);
-  const swipeBgWidth = useTransform(swipeX, (value) => `${value + 48}px`);
-
-  useEffect(() => {
-    const updateWidth = () => {
-      if (swipeContainerRef.current) {
-        setSwipeDragWidth(swipeContainerRef.current.offsetWidth - 56);
-      }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
-
   const handleConfirmDelivery = async () => {
     setIsConfirming(true);
     setConfirmError('');
@@ -222,28 +206,39 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
       } else {
         const data = await res.json();
         setConfirmError(data.error || 'Gagal konfirmasi pesanan.');
-        swipeX.set(0);
       }
     } catch (e) {
       setConfirmError('Terjadi kesalahan. Silakan coba lagi.');
-      swipeX.set(0);
     } finally {
       setIsConfirming(false);
-    }
-  };
-
-  const handleDragEnd = async () => {
-    if (swipeX.get() >= swipeDragWidth * 0.9) {
-      swipeX.set(swipeDragWidth);
-      await handleConfirmDelivery();
-    } else {
-      swipeX.set(0);
     }
   };
 
   const OrderTypeIcon = getOrderTypeIcon(order.orderType);
   const steps = getOrderSteps(order.orderType, currentStatus);
   const isFinished = ['COMPLETED', 'DELIVERED'].includes(currentStatus);
+
+  const isOngoingDelivery = order.orderType === 'DELIVERY' && ['ASSIGNED', 'PICKED_UP', 'ON_DELIVERY'].includes(currentStatus);
+
+  if (isOngoingDelivery) {
+    return (
+      <LeafletTracking
+        orderId={orderId}
+        orderStatus={currentStatus}
+        paymentMethod={order.paymentMethod}
+        customerName={order.customerName}
+        customerPhone={order.customerPhone}
+        address={order.address}
+        subtotal={order.subtotal}
+        deliveryFee={order.deliveryFee}
+        total={order.total}
+        items={order.items}
+        onConfirmDelivery={handleConfirmDelivery}
+        isConfirming={isConfirming}
+        confirmError={confirmError}
+      />
+    );
+  }
 
   return (
     <div className="min-h-dvh bg-background pb-safe">
@@ -296,13 +291,23 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
           <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 -ml-8 -mb-8" />
           
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <OrderTypeIcon className="w-5 h-5" />
-              <span className="text-sm font-bold uppercase">{currentStatus.replace('_', ' ')}</span>
+            <div className="flex justify-between items-start gap-4 flex-wrap">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <OrderTypeIcon className="w-5 h-5" />
+                  <span className="text-sm font-bold uppercase">{currentStatus.replace('_', ' ')}</span>
+                </div>
+                <p className="text-brand-200 text-xs font-semibold">
+                  {getOrderTypeLabel(order.orderType)}
+                </p>
+              </div>
+              {order.queueNumber && (
+                <div className="px-3.5 py-2 bg-white/20 border border-white/20 rounded-2xl text-center backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.05)] select-none">
+                  <p className="text-[9px] text-white/80 font-black uppercase tracking-wider">Antrean</p>
+                  <p className="text-xl font-black font-mono tracking-wider mt-0.5">{order.queueNumber}</p>
+                </div>
+              )}
             </div>
-            <p className="text-brand-200 text-xs">
-              {getOrderTypeLabel(order.orderType)}
-            </p>
 
             {/* Order Type Badge */}
             <div className="flex items-center gap-3 mt-4 pt-3 border-t border-white/15">
@@ -415,57 +420,6 @@ export default function OrderTrackingClient({ order }: { order: TrackingOrderSha
               <p className="text-xs text-red-600 mt-1 font-semibold">
                 Alasan: {cancelReasonState || 'Tidak ada alasan khusus'}
               </p>
-            </div>
-          )}
-
-          {/* Mapbox Live Tracking & Confirm Section */}
-          {order.orderType === 'DELIVERY' && currentStatus === 'ON_DELIVERY' && (
-            <div className="mt-8 space-y-4">
-               <h2 className="font-heading font-bold text-base flex items-center gap-2">
-                 <Truck className="w-5 h-5 text-brand-600" /> Live Tracking
-               </h2>
-               <LeafletTracking orderId={orderId} />
-
-               {/* Swipe to Confirm Button (Framer Motion drag-to-confirm) */}
-               <div className="pt-4">
-                 <p className="text-xs text-center text-muted-foreground mb-3 font-medium">Pesanan sudah sampai? Geser untuk mengonfirmasi</p>
-                 <div 
-                   ref={swipeContainerRef}
-                   className="w-full relative overflow-hidden bg-emerald-50 border border-emerald-200 rounded-full p-1 h-14 shadow-inner flex items-center select-none"
-                 >
-                    {/* Animated green progress background */}
-                    <motion.div 
-                      className="absolute left-1 top-1 bottom-1 bg-emerald-500 rounded-full"
-                      style={{ width: swipeBgWidth }}
-                    />
-                    
-                    {/* Centered instruction text */}
-                    <motion.div 
-                      className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                      style={{ opacity: swipeTextOpacity }}
-                    >
-                      <span className="font-bold text-emerald-700 text-sm">Geser untuk Konfirmasi</span>
-                    </motion.div>
-
-                    {/* Drag Handle */}
-                    <motion.div
-                      drag="x"
-                      dragConstraints={{ left: 0, right: swipeDragWidth }}
-                      dragElastic={0.05}
-                      dragMomentum={false}
-                      onDragEnd={handleDragEnd}
-                      style={{ x: swipeX }}
-                      className="w-12 h-12 rounded-full bg-white border border-emerald-300 flex items-center justify-center text-emerald-600 shadow-md cursor-grab active:cursor-grabbing z-10 shrink-0"
-                    >
-                      {isConfirming ? (
-                        <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
-                      ) : (
-                        <ChevronRight className="w-6 h-6 text-emerald-500" />
-                      )}
-                    </motion.div>
-                 </div>
-                 {confirmError && <p className="text-xs text-red-500 text-center mt-2">{confirmError}</p>}
-               </div>
             </div>
           )}
         </section>

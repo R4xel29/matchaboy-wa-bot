@@ -22,6 +22,11 @@ export async function GET() {
           include: {
             product: { select: { name: true } }
           }
+        },
+        user: {
+          select: {
+            image: true
+          }
         }
       },
       orderBy: {

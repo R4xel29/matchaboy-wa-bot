@@ -7,7 +7,33 @@ import { Bell, X } from 'lucide-react';
 interface OrderData {
   id: string;
   status: string;
+  orderType: string;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
 }
+
+const shouldTriggerAlarm = (order: OrderData, leadTimeMin: number) => {
+  if (order.status !== 'PENDING' && order.status !== 'PENDING_PAYMENT') {
+    return false;
+  }
+  if (order.orderType !== 'PICKUP') {
+    return true; // immediate alarm
+  }
+  if (!order.pickupDate || !order.pickupTime) {
+    return true; // immediate alarm if timing is unspecified
+  }
+  try {
+    const scheduledDate = new Date(order.pickupDate);
+    const [hours, minutes] = order.pickupTime.split(':').map(Number);
+    scheduledDate.setHours(hours, minutes, 0, 0);
+    
+    const timeDiffMinutes = (scheduledDate.getTime() - Date.now()) / (1000 * 60);
+    return timeDiffMinutes <= leadTimeMin;
+  } catch (err) {
+    console.error('[BG ALARM] Error parsing pickup time for alarm:', err);
+    return true;
+  }
+};
 
 export function AdminIncomingOrderAlarm() {
   const pathname = usePathname();
@@ -49,7 +75,8 @@ export function AdminIncomingOrderAlarm() {
         }
 
         const activeOrders: OrderData[] = data.orders;
-        console.log('[BG ALARM] Total orders loaded:', activeOrders.length);
+        const leadTime = data.pickupAlarmLeadTime ?? 30;
+        console.log('[BG ALARM] Total orders loaded:', activeOrders.length, 'leadTime:', leadTime);
 
         // Get read orders from localStorage
         let readIds: string[] = [];
@@ -63,9 +90,9 @@ export function AdminIncomingOrderAlarm() {
         }
         console.log('[BG ALARM] Read order IDs from localStorage:', readIds);
 
-        // Check if there are any PENDING/PENDING_PAYMENT orders not in readIds
+        // Check if there are any PENDING/PENDING_PAYMENT orders not in readIds and match alarm time
         const unread = activeOrders.some(
-          o => (o.status === 'PENDING' || o.status === 'PENDING_PAYMENT') && !readIds.includes(o.id)
+          o => shouldTriggerAlarm(o, leadTime) && !readIds.includes(o.id)
         );
         console.log('[BG ALARM] Computed hasUnread orders:', unread);
 

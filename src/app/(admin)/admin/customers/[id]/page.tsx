@@ -90,8 +90,12 @@ export default async function CustomerDetailPage({ params }: PageProps) {
             <div className="h-24 bg-gradient-to-r from-brand-400 to-brand-600"></div>
             <div className="px-6 pb-6 -mt-12 text-center">
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white p-1 shadow-xl mb-4">
-                <div className="w-full h-full rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-3xl">
-                  {(customer.name || 'U')[0].toUpperCase()}
+                <div className="w-full h-full rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-3xl overflow-hidden">
+                  {customer.image ? (
+                    <img src={customer.image} alt={customer.name || ''} className="w-full h-full object-cover" />
+                  ) : (
+                    (customer.name || 'U')[0].toUpperCase()
+                  )}
                 </div>
               </div>
               <h2 className="text-xl font-bold text-foreground mb-1">{customer.name || 'Unknown'}</h2>

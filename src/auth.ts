@@ -443,6 +443,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.phone = (user as any).phone
                 token.name = (user as any).name
                 token.email = (user as any).email
+                token.image = (user as any).image
 
                 // Generate a unique session token for tracking login device
                 const sessionToken = crypto.randomUUID()
@@ -478,7 +479,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 try {
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.sub as string },
-                        select: { role: true, referralCode: true, email: true, phone: true, name: true }
+                        select: { role: true, referralCode: true, email: true, phone: true, name: true, image: true }
                     })
 
                     // If user was deleted (Logout Paksa / Hapus Akun)
@@ -525,6 +526,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     token.phone = dbUser.phone
                     token.name = dbUser.name
                     token.email = dbUser.email
+                    token.image = dbUser.image
                 } catch (e) {
                     console.error("[AUTH] Failed to verify user status:", e)
                 }

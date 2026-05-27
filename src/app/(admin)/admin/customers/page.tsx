@@ -44,8 +44,12 @@ export default async function AdminCustomersPage() {
                 <tr key={customer.id} className="group hover:bg-muted/20 transition-colors relative">
                   <td className="px-5 py-3.5">
                     <Link href={`/admin/customers/${customer.id}`} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                        {(customer.name || 'U')[0].toUpperCase()}
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-xs shadow-sm overflow-hidden">
+                        {customer.image ? (
+                          <img src={customer.image} alt={customer.name || ''} className="w-full h-full object-cover" />
+                        ) : (
+                          (customer.name || 'U')[0].toUpperCase()
+                        )}
                       </div>
                       <span className="font-medium text-foreground text-[13px] hover:text-brand-600 transition-colors">{customer.name || 'Unknown'}</span>
                     </Link>
@@ -98,8 +102,12 @@ export default async function AdminCustomersPage() {
             <div key={customer.id} className="bg-white rounded-2xl border border-border/40 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] active:bg-muted/10 transition-colors">
               <Link href={`/admin/customers/${customer.id}`} className="block">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                    {(customer.name || 'U')[0].toUpperCase()}
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden">
+                    {customer.image ? (
+                      <img src={customer.image} alt={customer.name || ''} className="w-full h-full object-cover" />
+                    ) : (
+                      (customer.name || 'U')[0].toUpperCase()
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground text-[13px] truncate group-hover:text-brand-600 transition-colors">{customer.name || 'Unknown'}</p>

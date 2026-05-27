@@ -232,6 +232,7 @@ model Order {
   paymentMethod String // CASH, QRIS, COD, MIDTRANS
   status        String      @default("PENDING") // PENDING, PREPARING, READY, COMPLETED, ASSIGNED, TO_STORE, PICKED_UP, ON_DELIVERY, DELIVERED, CANCELLED
   items         OrderItem[]
+  queueNumber   String?
 
   // Loyalty
   hasTumbler    Boolean @default(false) // Pelanggan bawa tumbler/wadah sendiri
@@ -519,6 +520,7 @@ model StoreSettings {
   customHours         String   @default("{}") // JSON string of custom hours overrides
   whatsappNumber      String   @default("")
   whatsappMessage     String   @default("Halo Matchaboy, saya ingin bertanya...")
+  pickupAlarmLeadTime Int      @default(30)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

@@ -48,12 +48,16 @@ interface OrderData {
   createdAt: string;
   items: OrderItem[];
   paymentProofUrl?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
+  queueNumber?: string | null;
 }
 
 interface Props {
   initialOrders: OrderData[];
   storeLat: number;
   storeLng: number;
+  initialPickupAlarmLeadTime: number;
 }
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
@@ -107,7 +111,30 @@ ${itemsText}
 Jika ada pertanyaan atau perubahan, silakan kabari kami ya. Terima kasih! 🍵`;
 };
 
-export default function CashierOrdersClient({ initialOrders, storeLat, storeLng }: Props) {
+const shouldTriggerAlarm = (order: OrderData, leadTimeMin: number) => {
+  if (order.status !== 'PENDING' && order.status !== 'PENDING_PAYMENT') {
+    return false;
+  }
+  if (order.orderType !== 'PICKUP') {
+    return true; // immediate alarm
+  }
+  if (!order.pickupDate || !order.pickupTime) {
+    return true; // immediate alarm if timing is unspecified
+  }
+  try {
+    const scheduledDate = new Date(order.pickupDate);
+    const [hours, minutes] = order.pickupTime.split(':').map(Number);
+    scheduledDate.setHours(hours, minutes, 0, 0);
+    
+    const timeDiffMinutes = (scheduledDate.getTime() - Date.now()) / (1000 * 60);
+    return timeDiffMinutes <= leadTimeMin;
+  } catch (err) {
+    console.error('Error parsing pickup time for alarm:', err);
+    return true;
+  }
+};
+
+export default function CashierOrdersClient({ initialOrders, storeLat, storeLng, initialPickupAlarmLeadTime }: Props) {
   const { showToast } = useToast();
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -115,6 +142,7 @@ export default function CashierOrdersClient({ initialOrders, storeLat, storeLng 
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [orders, setOrders] = useState(initialOrders);
+  const [pickupAlarmLeadTime, setPickupAlarmLeadTime] = useState(initialPickupAlarmLeadTime);
 
   // Cancellation Modal State
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -188,6 +216,7 @@ export default function CashierOrdersClient({ initialOrders, storeLat, storeLng 
         if (res.ok) {
           const data = await res.json();
           if (data.orders) setOrders(data.orders);
+          if (data.pickupAlarmLeadTime !== undefined) setPickupAlarmLeadTime(data.pickupAlarmLeadTime);
         }
       } catch {}
     }, 10000);
@@ -196,7 +225,7 @@ export default function CashierOrdersClient({ initialOrders, storeLat, storeLng 
   }, []);
 
   const hasUnreadOrders = antrianOrders.some(
-    o => (o.status === 'PENDING' || o.status === 'PENDING_PAYMENT') && !readOrderIds.includes(o.id)
+    o => shouldTriggerAlarm(o, pickupAlarmLeadTime) && !readOrderIds.includes(o.id)
   );
 
   // Continuous alarm playback effect
@@ -484,6 +513,11 @@ export default function CashierOrdersClient({ initialOrders, storeLat, storeLng 
                       <span className="font-mono text-xs font-bold text-amber-700">
                         #{order.id.slice(0, 8).toUpperCase()}
                       </span>
+                      {order.queueNumber && (
+                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 font-extrabold text-[11px] rounded-lg border border-amber-200 uppercase shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                          {order.queueNumber}
+                        </span>
+                      )}
                       <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${getTypeStyle(order.orderType)}`}>
                         <TypeIcon className="w-3 h-3 inline mr-0.5 -mt-0.5" />
                         {ORDER_TYPE_LABELS[order.orderType]}
@@ -505,7 +539,13 @@ export default function CashierOrdersClient({ initialOrders, storeLat, storeLng 
                     </div>
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(order.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      {order.orderType === 'PICKUP' && order.pickupDate && order.pickupTime ? (
+                        <span className="text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                          Ambil: {new Date(order.pickupDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} {order.pickupTime}
+                        </span>
+                      ) : (
+                        new Date(order.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+                      )}
                     </span>
                   </div>
 
@@ -722,7 +762,19 @@ export default function CashierOrdersClient({ initialOrders, storeLat, storeLng 
             <div className="p-4 sm:p-5 border-b border-border/40 flex justify-between items-start bg-slate-50/50">
               <div>
                 <h2 className="text-lg font-bold font-heading text-foreground">Detail Pesanan</h2>
-                <p className="text-sm font-mono text-amber-700 font-semibold mt-0.5">#{selectedOrder.id.toUpperCase()}</p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <p className="text-sm font-mono text-amber-700 font-semibold">#{selectedOrder.id.toUpperCase()}</p>
+                  {selectedOrder.queueNumber && (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 font-extrabold text-[11px] rounded-lg border border-amber-200 uppercase">
+                      Antrean: {selectedOrder.queueNumber}
+                    </span>
+                  )}
+                  {selectedOrder.orderType === 'PICKUP' && selectedOrder.pickupDate && selectedOrder.pickupTime && (
+                    <span className="px-2 py-0.5 bg-purple-50 text-purple-700 font-bold text-[11px] rounded-lg border border-purple-150">
+                      Waktu Ambil: {new Date(selectedOrder.pickupDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })} pukul {selectedOrder.pickupTime}
+                    </span>
+                  )}
+                </div>
               </div>
               <button onClick={() => setSelectedOrder(null)} className="p-2 text-muted-foreground hover:bg-slate-100 rounded-full transition-colors">
                 <X className="w-5 h-5" />

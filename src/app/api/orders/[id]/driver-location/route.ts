@@ -22,6 +22,7 @@ export async function GET(
           select: {
             id: true,
             name: true,
+            phone: true,
             driverProfile: {
               select: {
                 lastLat: true, lastLng: true, lastLocationUpdate: true,
@@ -61,6 +62,7 @@ export async function GET(
       lng: dp.lastLng,
       updatedAt: dp.lastLocationUpdate,
       driverName: order.driver.name,
+      driverPhone: order.driver.phone,
       vehicleType: dp.vehicleType,
       plateNumber: dp.plateNumber,
       driverImage: dp.driverImageUrl,

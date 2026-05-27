@@ -12,6 +12,7 @@ export default function StoreSettingsPage() {
   const [closeTime, setCloseTime] = useState('21:00');
   const [pickupSlotInterval, setPickupSlotInterval] = useState(5);
   const [cancellationTimeLimit, setCancellationTimeLimit] = useState(15);
+  const [pickupAlarmLeadTime, setPickupAlarmLeadTime] = useState(30);
   const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(2000);
   const [maxDeliveryDistance, setMaxDeliveryDistance] = useState(10);
   const [storeName, setStoreName] = useState('Arus HQ');
@@ -199,6 +200,7 @@ export default function StoreSettingsPage() {
         }
         if (d.whatsappNumber !== undefined) setWhatsappNumber(d.whatsappNumber);
         if (d.whatsappMessage !== undefined) setWhatsappMessage(d.whatsappMessage);
+        if (d.pickupAlarmLeadTime !== undefined) setPickupAlarmLeadTime(d.pickupAlarmLeadTime);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -303,6 +305,7 @@ export default function StoreSettingsPage() {
           customHours: JSON.stringify(customHours),
           whatsappNumber,
           whatsappMessage,
+          pickupAlarmLeadTime,
         }),
       });
       if (res.ok) {
@@ -617,6 +620,16 @@ export default function StoreSettingsPage() {
                 className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:border-brand-500" />
               <p className="text-xs text-muted-foreground mt-2">
                 Batas waktu bagi pelanggan untuk dapat membatalkan pesanan Cash on Delivery (COD). Set 0 untuk menonaktifkan pembatalan.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Batas Waktu Alarm Pickup (menit sebelum pengambilan)
+              </label>
+              <input type="number" min="1" max="180" value={pickupAlarmLeadTime} onChange={e => setPickupAlarmLeadTime(Number(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:border-brand-500" />
+              <p className="text-xs text-muted-foreground mt-2">
+                Alarm suara akan berdering di dashboard kasir pada rentang waktu ini sebelum jadwal pengambilan pesanan oleh pelanggan.
               </p>
             </div>
           </div>

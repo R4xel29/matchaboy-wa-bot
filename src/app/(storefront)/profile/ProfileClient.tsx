@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronRight,
   Clock,
+  Camera,
   Heart,
   Bell,
   Coffee,
@@ -81,6 +82,7 @@ type UserShape = {
   birthDate: string;
   isGoogleConnected: boolean;
   isGuest?: boolean;
+  image?: string | null;
 };
 
 type VoucherShape = {
@@ -295,7 +297,11 @@ export default function ProfileClient({
                   <div className="relative w-16 h-16 shrink-0">
                     <div className="absolute inset-0 rounded-full border-2 border-[#D4A574] p-0.5 shadow-sm bg-gradient-to-br from-[#FFFBF7] to-[#FFF6EB]">
                       <div className="w-full h-full rounded-full bg-[#1E3F20] flex items-center justify-center overflow-hidden shadow-inner">
-                        <User className="w-8 h-8 text-[#D4A574]" />
+                        {user.image ? (
+                          <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-8 h-8 text-[#D4A574]" />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -477,7 +483,9 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
   const [phone, setPhone] = useState(user.phone);
   const [gender, setGender] = useState(user.gender || 'SECRET');
   const [birthDate, setBirthDate] = useState(user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '');
+  const [imageUrl, setImageUrl] = useState(user.image || '');
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showGoogleConfirm, setShowGoogleConfirm] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -486,6 +494,7 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
   const [deleteCode, setDeleteCode] = useState('');
   const [requestingDelete, setRequestingDelete] = useState(false);
   const [deletionPollingInterval, setDeletionPollingInterval] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state if user prop changes (e.g. after connecting Google)
   useEffect(() => {
@@ -494,7 +503,37 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
     setPhone(user.phone);
     setGender(user.gender || 'SECRET');
     setBirthDate(user.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '');
+    setImageUrl(user.image || '');
   }, [user]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploadingPhoto(true);
+    try {
+      const res = await fetch('/api/user/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = res.ok ? await res.json() : null;
+      if (data && data.url) {
+        setImageUrl(data.url);
+        showToast('Foto profil berhasil diunggah!', 'success');
+      } else {
+        showToast('Gagal mengunggah foto', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal mengunggah foto profil', 'error');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -558,10 +597,10 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
       const res = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, gender, birthDate })
+        body: JSON.stringify({ name, email, phone, gender, birthDate, image: imageUrl })
       });
       if(res.ok) {
-        onUpdate({ name, email, phone, gender, birthDate });
+        onUpdate({ name, email, phone, gender, birthDate, image: imageUrl });
       }
     } catch(err) {
       console.error(err);
@@ -592,6 +631,39 @@ function EditProfileOverlay({ user, onClose, onUpdate }: { user: UserShape, onCl
 
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide pb-32">
+          {/* Profile Photo Upload */}
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full border-4 border-[#D4A574]/20 shadow-md overflow-hidden bg-[#FFFBF7] flex items-center justify-center">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-10 h-10 text-[#D4A574]" />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute bottom-0 right-0 w-8 h-8 bg-[#B48A5E] hover:bg-[#96714C] text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all active:scale-95 disabled:opacity-50"
+              >
+                {uploadingPhoto ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+              </button>
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+            </div>
+            <p className="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wider">Foto Profil</p>
+          </div>
+
           {/* Name Field */}
           <div className="space-y-2">
             <label className="text-[11px] uppercase tracking-wider font-bold text-gray-400">Nama</label>

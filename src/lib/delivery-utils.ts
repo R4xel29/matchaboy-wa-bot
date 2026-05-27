@@ -31,10 +31,15 @@ function toRad(deg: number): number {
 
 /**
  * Calculate delivery fee based on distance
- * Base fee + per-km fee
+ * Base fee + per-km fee, with a minimum distance of 1.0 km, and rounded to the nearest Rp 500
  */
 export function calculateDeliveryFee(distanceKm: number, perKmFee: number = 2000): number {
-    return Math.round(distanceKm * perKmFee);
+    // Minimum 1.0 km distance
+    const effectiveDistance = Math.max(1.0, distanceKm);
+    const rawFee = effectiveDistance * perKmFee;
+    
+    // Round to the nearest Rp 500
+    return Math.round(rawFee / 500) * 500;
 }
 
 /**
@@ -50,3 +55,17 @@ export function isWithinDeliveryRange(distanceKm: number, maxDistanceKm: number 
 export function getDistanceFromStore(lat: number, lng: number): number {
     return calculateDistance(STORE.lat, STORE.lng, lat, lng);
 }
+
+/**
+ * Generate a deterministic 4-digit verification PIN for an order ID
+ */
+export function getDeliveryPin(orderId: string): string {
+    let hash = 0;
+    for (let i = 0; i < orderId.length; i++) {
+        hash = orderId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // Ensure it is a 4-digit positive integer
+    const pinVal = Math.abs(hash) % 10000;
+    return pinVal.toString().padStart(4, '0');
+}
+

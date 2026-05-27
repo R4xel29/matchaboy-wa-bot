@@ -17,11 +17,15 @@ export async function PUT(
     // Verify order belongs to user and is in a confirmable state
     const order = await prisma.order.findUnique({
       where: { id },
-      select: { userId: true, status: true }
+      select: { userId: true, status: true, paymentMethod: true }
     });
 
     if (!order || order.userId !== session.user.id) {
       return NextResponse.json({ error: 'Order not found or forbidden' }, { status: 403 })
+    }
+
+    if (order.paymentMethod === 'COD') {
+      return NextResponse.json({ error: 'Pesanan COD hanya dapat diselesaikan oleh kurir demi keamanan transaksi.' }, { status: 400 })
     }
 
     if (order.status !== 'ON_DELIVERY' && order.status !== 'DELIVERED') {

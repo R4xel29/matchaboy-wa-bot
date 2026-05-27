@@ -16,9 +16,10 @@ export async function GET() {
         deliveryFeePerKm: 2000,
         maxDeliveryDistance: 10,
         storeName: 'Arus HQ',
-        storeAddress: 'Jl. Matcha No. 1, Jakarta Selatan',
-        storeLat: -6.2088,
-        storeLng: 106.8456,
+        storeAddress: 'Jl. Mastrip No 357, Probolinggo',
+        storeLat: -7.78125167,
+        storeLng: 113.212266,
+        pickupAlarmLeadTime: 30,
       })
     }
 
@@ -39,6 +40,7 @@ export async function GET() {
       customHours: settings.customHours || "{}",
       whatsappNumber: settings.whatsappNumber || "",
       whatsappMessage: settings.whatsappMessage || "Halo Matchaboy, saya ingin bertanya...",
+      pickupAlarmLeadTime: settings.pickupAlarmLeadTime,
     })
   } catch {
     return NextResponse.json({
@@ -49,14 +51,15 @@ export async function GET() {
       deliveryFeePerKm: 2000,
       maxDeliveryDistance: 10,
       storeName: 'Arus HQ',
-      storeAddress: 'Jl. Matcha No. 1, Jakarta Selatan',
-      storeLat: -6.2088,
-      storeLng: 106.8456,
+      storeAddress: 'Jl. Mastrip No 357, Probolinggo',
+      storeLat: -7.78125167,
+      storeLng: 113.212266,
       operationalDays: "[0,1,2,3,4,5,6]",
       disabledDates: "[]",
       customHours: "{}",
       whatsappNumber: "",
       whatsappMessage: "Halo Matchaboy, saya ingin bertanya...",
+      pickupAlarmLeadTime: 30,
     })
   }
 }
@@ -99,6 +102,7 @@ export async function PUT(req: Request) {
           customHours: body.customHours !== undefined ? body.customHours : existing.customHours,
           whatsappNumber: body.whatsappNumber !== undefined ? body.whatsappNumber : existing.whatsappNumber,
           whatsappMessage: body.whatsappMessage !== undefined ? body.whatsappMessage : existing.whatsappMessage,
+          pickupAlarmLeadTime: body.pickupAlarmLeadTime !== undefined ? Number(body.pickupAlarmLeadTime) : existing.pickupAlarmLeadTime,
         },
       })
       return NextResponse.json(updated)
@@ -112,14 +116,15 @@ export async function PUT(req: Request) {
           deliveryFeePerKm: body.deliveryFeePerKm ?? 2000,
           maxDeliveryDistance: body.maxDeliveryDistance ?? 10,
           storeName: body.storeName || 'Arus HQ',
-          storeAddress: body.storeAddress || 'Jl. Matcha No. 1, Jakarta Selatan',
-          storeLat: body.storeLat ?? -6.2088,
-          storeLng: body.storeLng ?? 106.8456,
+          storeAddress: body.storeAddress || 'Jl. Mastrip No 357, Probolinggo',
+          storeLat: body.storeLat ?? -7.78125167,
+          storeLng: body.storeLng ?? 113.212266,
           operationalDays: body.operationalDays || '[0,1,2,3,4,5,6]',
           disabledDates: body.disabledDates || '[]',
           customHours: body.customHours || '{}',
           whatsappNumber: body.whatsappNumber || '',
           whatsappMessage: body.whatsappMessage || 'Halo Matchaboy, saya ingin bertanya...',
+          pickupAlarmLeadTime: body.pickupAlarmLeadTime !== undefined ? Number(body.pickupAlarmLeadTime) : 30,
         },
       })
       return NextResponse.json(created)

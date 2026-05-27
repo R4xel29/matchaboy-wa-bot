@@ -88,6 +88,7 @@ export default async function ProfilePage() {
           birthDate: user.birthDate?.toISOString() || "",
           isGoogleConnected: user.accounts.some((acc: any) => acc.provider === 'google'),
           isGuest: false,
+          image: user.image,
         }}
         orders={formattedOrders}
         vouchers={vouchers.map(v => ({
@@ -127,6 +128,7 @@ export default async function ProfilePage() {
           birthDate: "",
           isGoogleConnected: false,
           isGuest: false,
+          image: session.user.image || null,
         }}
         orders={[]}
         vouchers={[]}

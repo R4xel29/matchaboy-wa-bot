@@ -243,7 +243,7 @@ export default function StorefrontClient({
             borderBottomLeftRadius: "2.5rem",
             borderBottomRightRadius: "2.5rem",
           }}
-          className="md:hidden absolute top-0 left-0 right-0 z-20 border-b-[3px] border-white shadow-md pointer-events-none select-none overflow-hidden"
+          className="md:hidden absolute top-0 left-0 right-0 z-20 border-b-[3px] border-[#D4A574] shadow-md pointer-events-none select-none overflow-hidden"
         />
 
         {/* Header interaktif yang bisa di-drag */}
@@ -267,24 +267,53 @@ export default function StorefrontClient({
             isNight ? 'text-white' : 'text-[#2A1F16]'
           }`}
         >
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 relative z-10">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 relative z-10 pt-2">
             <div className="space-y-0.5">
-              <p className={`text-[10px] font-black uppercase tracking-[0.2em] select-none ${
-                isNight ? 'text-yellow-300' : 'text-[#0369A1]'
+              <p className={`text-[9px] font-black uppercase tracking-[0.25em] select-none ${
+                isNight ? 'text-[#D4A574]' : 'text-[#0369A1]'
               }`}>
-                {isNight ? 'Selamat Malam 🌃' : 'Selamat Siang ☀️'}
+                {isNight ? 'Selamat Malam' : 'Selamat Siang'}
               </p>
-              <h1 className="font-serif text-lg md:text-2xl font-black tracking-tight flex items-center gap-1.5">
-                Hai, {userName} <span className="text-base md:text-xl animate-pulse">👋</span>
+              <h1 className="font-serif text-lg md:text-2xl font-black tracking-tight text-white">
+                Hai, {userName}
               </h1>
             </div>
+            
+            {/* User Profile Avatar with Gold Border and Leaf Badge Overlay */}
             <div className="flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all duration-300 ${
-                isNight 
-                  ? 'bg-white/10 border border-white/20 text-yellow-300' 
-                  : 'bg-[#0369A1]/5 border border-[#0369A1]/10 text-[#2E5A44]'
-              }`}>
-                <span className="text-xl">🍃</span>
+              <div 
+                onClick={() => {
+                  if (status === 'authenticated') {
+                    window.location.href = '/profile';
+                  } else {
+                    openLogin();
+                  }
+                }}
+                className="relative cursor-pointer"
+              >
+                <div 
+                  style={{
+                    boxShadow: '0 0 14px 2px rgba(212, 165, 116, 0.85), inset 0 0 4px rgba(254, 240, 138, 0.6)',
+                  }}
+                  className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-tr from-[#D4A574] via-[#FEF08A] to-[#B48A5E] flex items-center justify-center overflow-hidden border border-[#FEF08A]/80"
+                >
+                  <div className="w-full h-full rounded-full overflow-hidden bg-[#1E3F20] relative">
+                    <Image
+                      src={session?.user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1E3F20&color=D4A574&bold=true`}
+                      alt="User Profile"
+                      width={48}
+                      height={48}
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1E3F20&color=D4A574&bold=true`;
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Gold Leaf Badge overlay on bottom right */}
+                <div className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full bg-[#1E3F20] border-2 border-white flex items-center justify-center shadow-md">
+                  <span className="text-[10px] leading-none select-none">🍃</span>
+                </div>
               </div>
             </div>
           </div>
@@ -333,7 +362,7 @@ export default function StorefrontClient({
           transition={{ delay: 0.1, duration: 0.6 }}
           className="max-w-6xl mx-auto px-4 sm:px-6 mt-10 md:mt-6 relative z-10"
         >
-          <div className="relative w-full aspect-[2.1/1] md:aspect-[3.6/1] overflow-hidden rounded-[2rem] bg-white shadow-md border border-[#EADFC9]/30 group">
+          <div className="relative w-full aspect-[2.1/1] md:aspect-[3.6/1] overflow-hidden rounded-[2rem] bg-white shadow-lg border-[3px] border-[#D4A574]/70 group">
             <Image
               src={displayBanners[currentSlide].image}
               alt={displayBanners[currentSlide].alt}
@@ -345,10 +374,28 @@ export default function StorefrontClient({
               }}
             />
             
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/5 flex flex-col justify-end p-5 md:p-8">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#D4A574] text-white text-[8px] font-black uppercase tracking-widest w-fit shadow-md mb-2">
-                Promo Spesial
-              </span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-5 md:p-8">
+              <div className="relative w-[115px] h-[26px] mb-2.5 select-none flex items-center justify-center">
+                {/* Gold Ribbon SVG background */}
+                <svg className="absolute inset-0 w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" viewBox="0 0 115 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="gold-ribbon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FEF08A" />
+                      <stop offset="40%" stopColor="#D4A574" />
+                      <stop offset="75%" stopColor="#B48A5E" />
+                      <stop offset="100%" stopColor="#8C6239" />
+                    </linearGradient>
+                  </defs>
+                  {/* Ribbon body with inward tail notch on the right */}
+                  <path d="M0 0 H115 L108 13 L115 26 H0 Z" fill="url(#gold-ribbon-grad)" />
+                  {/* Glowing gold inner border accent */}
+                  <path d="M0 1.5 H111 L105.5 13 L111 24.5 H0" stroke="#FEF08A" strokeWidth="0.8" strokeOpacity="0.8" fill="none" />
+                </svg>
+                {/* Ribbon text centered slightly left to align with notch */}
+                <span className="relative z-10 text-[#2A1F16] text-[8.5px] font-black uppercase tracking-widest leading-none pr-2.5 pt-0.5">
+                  Promo Spesial
+                </span>
+              </div>
               <h2 className="font-serif text-lg md:text-2xl font-black text-white leading-tight tracking-tight">
                 {displayBanners[currentSlide].headline || displayBanners[currentSlide].alt}
               </h2>
@@ -372,37 +419,66 @@ export default function StorefrontClient({
           </div>
         </motion.div>
 
-        {/* Welcome & Referral Widget Banner (Only shown for authenticated users, completely hidden for guests) */}
-        {status === 'authenticated' && (
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 relative z-10">
-            <motion.div 
-              onClick={() => window.location.href = '/profile?section=referral'}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.15 }}
-              className="bg-gradient-to-br from-[#2E5A44]/15 via-[#FAF8F5] to-[#EADFC9]/25 border border-[#2E5A44]/20 p-4.5 rounded-3xl shadow-sm flex items-center justify-between gap-4 backdrop-blur-md relative overflow-hidden cursor-pointer hover:shadow-md transition-all group"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4A574]/5 rounded-full blur-2xl pointer-events-none" />
-              <div className="flex items-center gap-4.5">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#D4A574] to-[#B48A5E] flex items-center justify-center text-white shadow-md flex-shrink-0">
-                  <Sparkles className="w-5.5 h-5.5" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-black text-xs md:text-sm text-gray-900 leading-snug">
-                    Ajak Teman, Dapat Reward Voucher! 🤝
-                  </h3>
-                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 max-w-xl">
-                    Temanmu dapat diskon <span className="font-bold text-gray-800">Rp3.000</span>, kamu mendapat <span className="font-bold text-[#2E5A44]">Poin / Voucher</span> reward menarik!
+        {/* Welcome & Referral Widget Banner (Shown for both authenticated users and guests) */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 relative z-10">
+          <motion.div 
+            onClick={() => {
+              if (status === 'authenticated') {
+                window.location.href = '/profile?section=referral';
+              } else {
+                openLogin();
+              }
+            }}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            style={{
+              backgroundImage: "url('/brand/referral_bg.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+            className="border-2 border-[#D4A574]/60 p-5 rounded-[2rem] shadow-md flex items-center justify-between gap-4 relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group"
+          >
+            <div className="flex items-center gap-4.5 z-10">
+              {/* Stacked hands vector */}
+              <div className="w-14 h-14 shrink-0 flex items-center justify-center select-none bg-[#704F37]/10 rounded-2xl border border-[#D4A574]/40 relative shadow-inner">
+                <svg viewBox="0 0 100 100" className="w-11 h-11 text-[#704F37]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+                  {/* Stacked hands graphics */}
+                  <path d="M22 22 L40 40 M30 18 L44 32" stroke="#8C6239" strokeWidth="3" />
+                  <path d="M40 40 C43 43, 48 39, 44 35 C42 33, 38 31, 35 32" stroke="#8C6239" strokeWidth="2.5" fill="#EADFC9" />
+                  <path d="M78 22 L60 40 M70 18 L56 32" stroke="#B48A5E" strokeWidth="3" />
+                  <path d="M60 40 C57 43, 52 39, 56 35 C58 33, 62 31, 65 32" stroke="#B48A5E" strokeWidth="2.5" fill="#EADFC9" />
+                  <path d="M22 80 L40 60 M30 82 L44 68" stroke="#946F48" strokeWidth="3" />
+                  <path d="M40 60 C43 57, 48 61, 44 65 C42 67, 38 69, 35 68" stroke="#946F48" strokeWidth="2.5" fill="#EADFC9" />
+                  <path d="M78 80 L60 60 M70 82 L56 68" stroke="#D4A574" strokeWidth="3" />
+                  <path d="M60 60 C57 57, 52 61, 56 65 C58 67, 62 69, 65 68" stroke="#D4A574" strokeWidth="2.5" fill="#EADFC9" />
+                  <circle cx="50" cy="50" r="10" fill="#EADFC9" stroke="#704F37" strokeWidth="2" />
+                  <path d="M47 50 L53 50 M50 47 L50 53" stroke="#704F37" strokeWidth="2" />
+                  <path d="M12 50 L14 47 L16 50 L14 53 Z M88 50 L86 47 L84 50 L86 53 Z M50 12 L48 15 L50 18 L52 15 Z M50 88 L48 85 L50 82 L52 85 Z" fill="#D4A574" stroke="none" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-serif font-black text-xs md:text-sm text-gray-900 leading-snug">
+                  Ajak Teman, Dapat Reward Voucher!
+                </h3>
+                <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-500 font-semibold max-w-xl">
+                  <span>🤝</span>
+                  <p>
+                    Temanmu dapat diskon <span className="font-bold text-gray-800">Rp3.000</span>, kamu mendapat <span className="font-bold text-[#8C6239]">Poin / Voucher</span> reward menarik!
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-[#B48A5E] text-[11px] font-bold group-hover:translate-x-1 transition-transform flex-shrink-0">
-                <span>Undang Teman</span>
-                <ChevronRight className="w-4 h-4" />
+            </div>
+
+            {/* Styled "Undang Teman" Button with Gold Star Badge */}
+            <div className="flex items-center gap-1.5 px-4.5 py-2.5 bg-[#704F37] hover:bg-[#5C3E2B] text-white rounded-full text-[11px] font-bold shadow-md group-hover:scale-102 transition-all flex-shrink-0 z-10">
+              <span>Undang Teman</span>
+              <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
+                <Star className="w-2.5 h-2.5 fill-white stroke-none" />
               </div>
-            </motion.div>
-          </div>
-        )}
+            </div>
+          </motion.div>
+        </div>
 
         {/* Content Sections */}
         <motion.div 
