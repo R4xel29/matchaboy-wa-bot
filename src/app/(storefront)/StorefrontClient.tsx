@@ -372,82 +372,7 @@ export default function StorefrontClient({
           </div>
         </motion.div>
 
-        {/* Welcome & Referral Widget */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 relative z-10">
-          {status !== 'authenticated' ? (
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.15 }}
-              className="bg-gradient-to-br from-[#EADFC9]/25 to-[#FAF8F5] border border-[#EADFC9]/50 p-6 rounded-3xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 backdrop-blur-md relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#2E5A44]/5 rounded-full blur-xl pointer-events-none" />
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#2E5A44] flex items-center justify-center text-white shadow-md flex-shrink-0 animate-pulse">
-                  <Gift className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-black text-sm md:text-base text-gray-900 leading-snug">
-                    Spesial Pengguna Baru! 🎁
-                  </h3>
-                  <p className="text-[11px] text-gray-500 font-semibold mt-0.5 max-w-xl">
-                    Daftar instan via WhatsApp sekarang dan dapatkan potongan langsung <span className="text-[#2E5A44] font-bold">Rp3.000</span> untuk pesanan pertamamu! <span className="text-gray-400">(min. belanja Rp30.000)</span>
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={openLogin}
-                className="w-full md:w-auto px-6 py-3 bg-[#2E5A44] hover:bg-[#1E3F20] text-white text-[12px] font-bold rounded-2xl shadow-md transition-all active:scale-[0.98] whitespace-nowrap"
-              >
-                Daftar Instan via WA
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.15 }}
-              className="bg-gradient-to-br from-[#2E5A44]/10 via-[#FAF8F5] to-[#EADFC9]/25 border border-[#2E5A44]/15 p-5 md:p-6 rounded-3xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 backdrop-blur-md relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4A574]/5 rounded-full blur-2xl pointer-events-none" />
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#D4A574] to-[#B48A5E] flex items-center justify-center text-white shadow-md flex-shrink-0">
-                  <Sparkles className="w-6 h-6 animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-black text-sm md:text-base text-gray-900 leading-snug">
-                    Bagikan Kenikmatan Matcha! 🍵
-                  </h3>
-                  <p className="text-[11px] text-gray-500 font-semibold mt-0.5 max-w-xl leading-relaxed">
-                    Ajak temanmu menikmati Matcha premium. Temanmu dapat potongan <span className="font-bold text-gray-800">Rp3.000</span>, dan kamu mendapat bonus <span className="font-bold text-[#2E5A44]">Poin / Voucher diskon</span> saat mereka selesai belanja pertama kali!
-                  </p>
-                </div>
-              </div>
-              
-              <div className="w-full md:w-auto flex flex-col sm:flex-row items-center gap-2.5 mt-2 md:mt-0 flex-shrink-0">
-                <div className="w-full sm:w-auto flex items-center gap-1 bg-white border border-[#EADFC9]/40 rounded-2xl p-1.5 shadow-sm">
-                  <span className="text-[11px] font-mono text-gray-500 px-2 select-all truncate max-w-[150px]">
-                    {referralCode}
-                  </span>
-                  <button 
-                    onClick={handleCopyLink}
-                    className={`p-2 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors flex-shrink-0 ${copied ? 'text-green-600 bg-green-50' : ''}`}
-                    title="Salin Link"
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <button 
-                  onClick={handleShareWA}
-                  className="w-full sm:w-auto px-5 py-3.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-[12px] font-bold rounded-2xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white stroke-none" />
-                  Bagikan WA
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </div>
+
 
         {/* Content Sections */}
         <motion.div 
@@ -709,6 +634,65 @@ export default function StorefrontClient({
           </section>
 
         </motion.div>
+
+        {/* Welcome & Referral Widget Banner */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 relative z-10">
+          {status !== 'authenticated' ? (
+            <motion.div 
+              onClick={openLogin}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="bg-gradient-to-br from-[#EADFC9]/25 to-[#FAF8F5] border border-[#EADFC9]/50 p-4.5 rounded-3xl shadow-sm flex items-center justify-between gap-4 backdrop-blur-md relative overflow-hidden cursor-pointer hover:shadow-md transition-all group"
+            >
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#2E5A44]/5 rounded-full blur-xl pointer-events-none" />
+              <div className="flex items-center gap-4.5">
+                <div className="w-11 h-11 rounded-2xl bg-[#2E5A44] flex items-center justify-center text-white shadow-md flex-shrink-0">
+                  <Gift className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-xs md:text-sm text-gray-900 leading-snug">
+                    Spesial Pengguna Baru! 🎁
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 max-w-xl">
+                    Daftar instan via WhatsApp sekarang dan dapatkan potongan langsung <span className="text-[#2E5A44] font-bold">Rp3.000</span> (min. belanja Rp30.000)
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-[#2E5A44] text-[11px] font-bold group-hover:translate-x-1 transition-transform flex-shrink-0">
+                <span>Daftar Instan</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              onClick={() => window.location.href = '/profile?section=loyalty'}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="bg-gradient-to-br from-[#2E5A44]/15 via-[#FAF8F5] to-[#EADFC9]/25 border border-[#2E5A44]/20 p-4.5 rounded-3xl shadow-sm flex items-center justify-between gap-4 backdrop-blur-md relative overflow-hidden cursor-pointer hover:shadow-md transition-all group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4A574]/5 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center gap-4.5">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#D4A574] to-[#B48A5E] flex items-center justify-center text-white shadow-md flex-shrink-0">
+                  <Sparkles className="w-5.5 h-5.5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-xs md:text-sm text-gray-900 leading-snug">
+                    Ajak Teman, Dapat Reward Voucher! 🤝
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 max-w-xl">
+                    Temanmu dapat diskon <span className="font-bold text-gray-800">Rp3.000</span>, kamu mendapat <span className="font-bold text-[#2E5A44]">Poin / Voucher</span> reward menarik!
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-[#B48A5E] text-[11px] font-bold group-hover:translate-x-1 transition-transform flex-shrink-0">
+                <span>Undang Teman</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </motion.div>
+          )}
+        </div>
 
         {/* Join CTA for unauthenticated users */}
         {status === 'unauthenticated' && (
