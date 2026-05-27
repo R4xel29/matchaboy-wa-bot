@@ -57,10 +57,17 @@ export function FloatingCart() {
                   </motion.span>
                 </div>
                 <div className="text-left">
-                  <p className="text-xs text-brand-200">
-                    {count} {count === 1 ? 'item' : 'items'}
-                  </p>
-                  <p className="font-bold text-sm">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-xs text-brand-200">
+                      {count} {count === 1 ? 'item' : 'items'}
+                    </p>
+                    {discount > 0 && (
+                      <span className="bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-[0_2px_8px_rgba(16,185,129,0.35)] flex items-center gap-1 animate-pulse">
+                        Anda hemat {formatRupiah(discount)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-bold text-sm mt-0.5">
                     {discount > 0 && (
                       <span className="line-through text-brand-200/60 mr-1.5 text-xs">
                         {formatRupiah(price)}
