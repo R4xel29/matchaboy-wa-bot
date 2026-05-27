@@ -437,12 +437,12 @@ export default function StorefrontClient({
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
-            className="border-2 border-[#D4A574]/60 p-5 rounded-[2rem] shadow-md flex items-center justify-between gap-4 relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group"
+            className="border-2 border-[#D4A574]/60 p-4 sm:p-5 rounded-[2rem] shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden cursor-pointer hover:shadow-lg transition-all group"
           >
-            <div className="flex items-center gap-4.5 z-10">
+            <div className="flex items-center gap-3 sm:gap-4.5 z-10 w-full sm:w-auto">
               {/* Stacked hands vector */}
-              <div className="w-14 h-14 shrink-0 flex items-center justify-center select-none bg-[#704F37]/10 rounded-2xl border border-[#D4A574]/40 relative shadow-inner">
-                <svg viewBox="0 0 100 100" className="w-11 h-11 text-[#704F37]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 flex items-center justify-center select-none bg-[#704F37]/10 rounded-2xl border border-[#D4A574]/40 relative shadow-inner">
+                <svg viewBox="0 0 100 100" className="w-9 h-9 sm:w-11 sm:h-11 text-[#704F37]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
                   {/* Stacked hands graphics */}
                   <path d="M22 22 L40 40 M30 18 L44 32" stroke="#8C6239" strokeWidth="3" />
                   <path d="M40 40 C43 43, 48 39, 44 35 C42 33, 38 31, 35 32" stroke="#8C6239" strokeWidth="2.5" fill="#EADFC9" />
@@ -457,13 +457,13 @@ export default function StorefrontClient({
                   <path d="M12 50 L14 47 L16 50 L14 53 Z M88 50 L86 47 L84 50 L86 53 Z M50 12 L48 15 L50 18 L52 15 Z M50 88 L48 85 L50 82 L52 85 Z" fill="#D4A574" stroke="none" />
                 </svg>
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-serif font-black text-xs md:text-sm text-gray-900 leading-snug">
                   Ajak Teman, Dapat Reward Voucher!
                 </h3>
-                <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-500 font-semibold max-w-xl">
-                  <span>🤝</span>
-                  <p>
+                <div className="flex items-start gap-1 mt-1 text-[10px] text-gray-500 font-semibold max-w-xl">
+                  <span className="shrink-0">🤝</span>
+                  <p className="leading-tight">
                     Temanmu dapat diskon <span className="font-bold text-gray-800">Rp3.000</span>, kamu mendapat <span className="font-bold text-[#8C6239]">Poin / Voucher</span> reward menarik!
                   </p>
                 </div>
@@ -471,9 +471,9 @@ export default function StorefrontClient({
             </div>
 
             {/* Styled "Undang Teman" Button with Gold Star Badge */}
-            <div className="flex items-center gap-1.5 px-4.5 py-2.5 bg-[#704F37] hover:bg-[#5C3E2B] text-white rounded-full text-[11px] font-bold shadow-md group-hover:scale-102 transition-all flex-shrink-0 z-10">
+            <div className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-[#704F37] hover:bg-[#5C3E2B] text-white rounded-full text-[11px] font-bold shadow-md group-hover:scale-102 transition-all w-full sm:w-auto flex-shrink-0 z-10">
               <span>Undang Teman</span>
-              <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
+              <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                 <Star className="w-2.5 h-2.5 fill-white stroke-none" />
               </div>
             </div>

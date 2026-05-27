@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 import { MotionLoadingScreen } from "@/components/ui/MotionLoadingScreen";
 
 function VerifyWABody() {
@@ -71,25 +72,75 @@ function VerifyWABody() {
     );
   }
 
+  if (status === "success") {
+    return (
+      <div className="fixed inset-0 z-[9999] w-screen h-screen flex flex-col items-center justify-center bg-[#0B130E] text-[#FFFBF5] overflow-hidden select-none">
+        {/* Glow backdrop */}
+        <div className="absolute w-[350px] h-[350px] rounded-full bg-[#2E5A44]/25 blur-[100px] pointer-events-none" />
+        
+        <div className="relative flex flex-col items-center justify-center z-10 space-y-6 text-center px-6">
+          {/* Animated checkmark circle */}
+          <motion.div
+            initial={{ scale: 0, rotate: -45 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+            className="w-20 h-20 rounded-full bg-[#2E5A44] border border-[#D4A574]/40 flex items-center justify-center shadow-lg shadow-[#2E5A44]/30"
+          >
+            <motion.svg
+              className="w-10 h-10 text-[#FFFBF5]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3.5}
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+            >
+              <motion.path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </motion.svg>
+          </motion.div>
+
+          <div className="space-y-2">
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-2xl font-semibold tracking-wide font-serif text-[#FFFBF5]"
+            >
+              Verifikasi Berhasil!
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-sm text-[#E8F5E9]/75 max-w-[280px] mx-auto leading-relaxed"
+            >
+              Selamat datang di Arus. Mengarahkan Anda ke beranda...
+            </motion.p>
+          </div>
+
+          {/* Simple premium loading line indicator */}
+          <div className="w-24 h-[2px] bg-[#2E5A44]/35 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-[#D4A574]"
+              initial={{ x: "-100%" }}
+              animate={{ x: "100%" }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              style={{ width: '60%' }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="max-w-md w-full p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg text-center space-y-6">
-        {status === "success" && (
-          <>
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white font-serif">Login Berhasil!</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Mengarahkan Anda ke halaman utama...
-            </p>
-          </>
-        )}
-
         {status === "banned" && (
           <>
             <div className="flex justify-center">
