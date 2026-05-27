@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Settings, Save, RefreshCw, AlertCircle, Ticket, Gift, DollarSign, Users } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/Toast';
 
 export default function ReferralSettingsClient() {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<any>({});
@@ -29,7 +30,7 @@ export default function ReferralSettingsClient() {
         setReferralTemplate(tmplData[0]);
       }
     } catch (err) {
-      toast.error('Gagal memuat pengaturan');
+      showToast('Gagal memuat pengaturan', 'error');
     } finally {
       setLoading(false);
     }
@@ -68,9 +69,9 @@ export default function ReferralSettingsClient() {
         });
       }
 
-      toast.success('Pengaturan referral berhasil disimpan');
+      showToast('Pengaturan referral berhasil disimpan', 'success');
     } catch (err) {
-      toast.error('Gagal menyimpan pengaturan');
+      showToast('Gagal menyimpan pengaturan', 'error');
     } finally {
       setSaving(false);
     }
