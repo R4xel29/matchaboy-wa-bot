@@ -7,9 +7,11 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Loader2, ArrowLeft, AlertTriangle, X } from "lucide-react"
 import { useToast } from "@/components/ui/Toast"
+import { MotionLoadingScreen } from "@/components/ui/MotionLoadingScreen"
 
 function LoginContent() {
   const [loading, setLoading] = useState(false)
+  const [loadingMessages, setLoadingMessages] = useState<string[] | undefined>(undefined)
   const [phone, setPhone] = useState("")
   const [showOtherMethods, setShowOtherMethods] = useState(false)
   const [showGoogleModal, setShowGoogleModal] = useState(false)
@@ -20,6 +22,11 @@ function LoginContent() {
   const { showToast } = useToast()
 
   const handleWALogin = (targetPhone?: string) => {
+    setLoadingMessages([
+      "Membuka WhatsApp...",
+      "Menyiapkan pesan verifikasi...",
+      "Menghubungkan ke WhatsApp Bot Arus..."
+    ]);
     setLoading(true);
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const formattedToken = `${token.substring(0,8)}-${token.substring(8,12)}-${token.substring(12,16)}-${token.substring(16,20)}-${token.substring(20,32)}`;
@@ -42,11 +49,19 @@ function LoginContent() {
     }
     
     window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WA_BOT_NUMBER || "6289525672990"}?text=${encodeURIComponent(waMessage)}`, '_blank');
-    setLoading(false);
+    
+    setTimeout(() => {
+      setLoading(false);
+    }, 2500);
   };
 
   const handleGoogleSubmit = async () => {
     if (!googlePhone) return;
+    setLoadingMessages([
+      "Menghubungkan ke Google...",
+      "Memverifikasi ketersediaan nomor...",
+      "Mempersiapkan pendaftaran akun Anda..."
+    ]);
     setGoogleLoading(true);
 
     try {
@@ -77,7 +92,6 @@ function LoginContent() {
     } catch (err) {
       console.error(err);
       showToast("Gagal memproses pendaftaran", "error");
-    } finally {
       setGoogleLoading(false);
     }
   };
@@ -94,6 +108,10 @@ function LoginContent() {
       setShowGoogleModal(true)
     }
   }, [errorParam, showToast])
+
+  if (loading || googleLoading) {
+    return <MotionLoadingScreen customMessages={loadingMessages} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col px-6">
@@ -333,11 +351,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#B48A5E] animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<MotionLoadingScreen />}>
       <LoginContent />
     </Suspense>
   )

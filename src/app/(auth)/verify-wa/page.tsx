@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { MotionLoadingScreen } from "@/components/ui/MotionLoadingScreen";
 
 function VerifyWABody() {
   const searchParams = useSearchParams();
@@ -57,21 +58,22 @@ function VerifyWABody() {
     verifyToken();
   }, [token, router]);
 
+  if (status === "loading") {
+    return (
+      <MotionLoadingScreen 
+        customMessages={[
+          "Membaca token otentikasi...",
+          "Memverifikasi WhatsApp Anda...",
+          "Mengamankan sesi masuk...",
+          "Mempersiapkan beranda Arus Anda..."
+        ]}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="max-w-md w-full p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg text-center space-y-6">
-        {status === "loading" && (
-          <>
-            <div className="flex justify-center">
-              <Loader2 className="w-12 h-12 text-[#B48A5E] animate-spin" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white font-serif">Verifikasi Login...</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Mohon tunggu, kami sedang mengautentikasi akun Anda.
-            </p>
-          </>
-        )}
-        
         {status === "success" && (
           <>
             <div className="flex justify-center">
@@ -149,9 +151,7 @@ function VerifyWABody() {
 
 export default function VerifyWAPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-      <Loader2 className="w-8 h-8 text-[#B48A5E] animate-spin" />
-    </div>}>
+    <Suspense fallback={<MotionLoadingScreen />}>
       <VerifyWABody />
     </Suspense>
   );
