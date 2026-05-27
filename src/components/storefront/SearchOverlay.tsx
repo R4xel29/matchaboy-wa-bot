@@ -139,7 +139,7 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={{ opacity: typeof window !== 'undefined' && window.location.search.includes('openMenu=true') ? 1 : 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
