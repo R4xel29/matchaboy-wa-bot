@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Clock, Save, Info, CheckCircle2, ChevronRight, Upload, X, Loader2, Check } from 'lucide-react'
+import { ArrowLeft, Clock, Save, Info, CheckCircle2, ChevronRight, Upload, X, Loader2, Check, Download } from 'lucide-react'
 import { formatRupiah } from '@/lib/utils'
 import Image from 'next/image'
 import { useToast } from '@/components/ui/Toast'
@@ -123,6 +123,28 @@ export default function QrisClient({ order }: { order: any }) {
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(order.paymentQrContent)}`
 
+  const handleDownloadQr = async () => {
+    try {
+      showToast("Mengunduh QRIS...", "info")
+      const response = await fetch(qrImageUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `QRIS_MATCHABOY_${order.id.slice(0, 8).toUpperCase()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      showToast("QRIS berhasil diunduh!", "success")
+    } catch (error) {
+      console.error("Gagal mengunduh QRIS:", error)
+      // Fallback: open in new tab
+      window.open(qrImageUrl, '_blank')
+      showToast("Gagal mengunduh langsung. QRIS dibuka di tab baru.", "error")
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-[#FFFBF5] pb-24 font-sans text-gray-800 noise">
       {/* Header */}
@@ -189,16 +211,25 @@ export default function QrisClient({ order }: { order: any }) {
           </div>
         </motion.div>
 
-        {/* Screenshot Instruction */}
-        <div className="space-y-3">
+        {/* Download & Save Options */}
+        <div className="grid grid-cols-2 gap-3">
           <button
+            type="button"
+            onClick={handleDownloadQr}
+            className="py-3.5 bg-[#B48A5E] hover:bg-[#946F48] text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-xs"
+          >
+            <Download className="w-4 h-4" />
+            <span>Unduh QR Code</span>
+          </button>
+          <button
+            type="button"
             onClick={() => {
               showToast("Silakan lakukan screenshot (tangkapan layar) pada layar handphone Anda untuk menyimpan kode QRIS ke galeri.", 'info')
             }}
-            className="w-full py-4.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-xs"
+            className="py-3.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-xs"
           >
-            <Save className="w-4.5 h-4.5 text-[#B48A5E]" />
-            <span>Simpan QRIS ke Galeri (Screenshot)</span>
+            <Save className="w-4 h-4 text-[#B48A5E]" />
+            <span>Screenshot</span>
           </button>
         </div>
 

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, CheckCircle, MessageCircle, Loader2, X,
-  QrCode, Banknote, Building2, CreditCard, Copy, Check
+  QrCode, Banknote, Building2, CreditCard, Copy, Check, Download
 } from 'lucide-react';
 
 interface BankAccount {
@@ -87,6 +87,25 @@ export function PaymentUpload({ orderTotal, customerName, onProofUploaded, onPay
       `Bukti pembayaran sudah saya upload di aplikasi. Mohon dikonfirmasi 🙏`
     );
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+  };
+
+  const handleDownloadStaticQris = async () => {
+    if (!config?.qris?.image) return;
+    try {
+      const response = await fetch(config.qris.image);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `QRIS_MATCHABOY.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Gagal mengunduh QRIS:", error);
+      window.open(config.qris.image, '_blank');
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -344,12 +363,22 @@ export function PaymentUpload({ orderTotal, customerName, onProofUploaded, onPay
               </h4>
 
               {config?.qris?.image ? (
-                <div className="mx-auto w-full max-w-[280px] rounded-2xl border border-purple-200 bg-white p-2.5 mb-3 flex items-center justify-center shadow-sm">
-                  <img
-                    src={config.qris.image}
-                    alt="QRIS"
-                    className="w-full h-auto max-h-[350px] object-contain rounded-xl"
-                  />
+                <div className="flex flex-col items-center gap-2 mb-3">
+                  <div className="mx-auto w-full max-w-[280px] rounded-2xl border border-purple-200 bg-white p-2.5 flex items-center justify-center shadow-sm">
+                    <img
+                      src={config.qris.image}
+                      alt="QRIS"
+                      className="w-full h-auto max-h-[350px] object-contain rounded-xl"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadStaticQris}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-purple-650 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm text-xs transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Unduh QRIS</span>
+                  </button>
                 </div>
               ) : (
                 <div className="mx-auto w-full max-w-[280px] aspect-square rounded-2xl border-2 border-dashed border-purple-300 bg-purple-50 flex flex-col items-center justify-center mb-3">
