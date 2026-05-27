@@ -102,6 +102,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Gagal memproses klaim voucher. Hubungi admin.' }, { status: 500 });
     }
 
+    if ('error' in rewardResult && rewardResult.error) {
+      return NextResponse.json({ error: rewardResult.error }, { status: 400 });
+    }
+
     return NextResponse.json({
       success: true,
       message: `Berhasil klaim voucher! Hadiah berupa ${rewardResult.reward} telah ditambahkan ke akun Anda.`,

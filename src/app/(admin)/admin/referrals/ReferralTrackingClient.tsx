@@ -2,9 +2,10 @@
 
 import {
   Share2, Users, Ticket, CheckCircle2, Clock,
-  ShoppingBag, Gift, Search
+  ShoppingBag, Gift, Search, Settings
 } from 'lucide-react';
 import { useState } from 'react';
+import ReferralSettingsClient from '../referral-settings/ReferralSettingsClient';
 
 interface ReferralData {
   referee: { id: string; name: string | null; email: string | null; phone: string | null };
@@ -26,6 +27,7 @@ interface Props {
 
 export default function ReferralTrackingClient({ referrals, stats }: Props) {
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'tracking' | 'settings'>('tracking');
 
   const filtered = referrals.filter((r) => {
     const q = search.toLowerCase();
@@ -40,16 +42,52 @@ export default function ReferralTrackingClient({ referrals, stats }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold font-heading text-foreground flex items-center gap-2">
-          <Share2 className="w-6 h-6 text-violet-600" />
-          Referral Tracking
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Pantau siapa yang mengajak siapa, dan status pembelian pertama.
-        </p>
+      {/* Header with combined tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/20 pb-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold font-heading text-foreground flex items-center gap-2">
+            <Share2 className="w-6 h-6 text-violet-600" />
+            Kelola Referral
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {activeTab === 'tracking' 
+              ? 'Pantau siapa yang mengajak siapa, dan status pembelian pertama.' 
+              : 'Atur program referral, tier hadiah, minimal transaksi, dan event promo.'}
+          </p>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex bg-muted/40 p-1.5 rounded-2xl border border-border/20 w-fit shrink-0">
+          <button
+            onClick={() => setActiveTab('tracking')}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'tracking'
+                ? 'bg-violet-600 text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Pelacakan (Tracking)
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'settings'
+                ? 'bg-violet-600 text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Pengaturan (Settings)
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'settings' ? (
+        <ReferralSettingsClient />
+      ) : (
+        <>
+          {/* Stats, Search, and Table goes here */}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -158,6 +196,8 @@ export default function ReferralTrackingClient({ referrals, stats }: Props) {
           </table>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

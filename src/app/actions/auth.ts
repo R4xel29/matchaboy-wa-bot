@@ -33,7 +33,7 @@ export async function registerUser(formData: FormData) {
                 const refParam = url.searchParams.get('ref');
                 if (refParam) cleanedCode = refParam;
             } catch (e) {
-                const match = cleanedCode.match(/[?&]ref=([^&]+)/);
+                const match = cleanedCode.match(/(?:[?&]|^)ref=([^&]+)/);
                 if (match) {
                     cleanedCode = match[1];
                 }

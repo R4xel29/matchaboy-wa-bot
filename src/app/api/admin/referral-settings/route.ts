@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 // GET — fetch referral tiers, events, and settings
 export async function GET() {
-  const [tiers, events, loyaltySettings] = await Promise.all([
+  const [tiers, events, loyaltySettings, voucherTemplates] = await Promise.all([
     prisma.referralTier.findMany({ orderBy: { tierNumber: 'asc' } }),
     prisma.referralEvent.findMany({ orderBy: { startDate: 'desc' } }),
     prisma.loyaltySettings.findFirst({
@@ -14,7 +14,17 @@ export async function GET() {
         referralRewardVoucher: true,
         referralRewardDesc: true,
         referralShareImage: true,
+        referralMinPurchase: true,
+        referralMaxClaims: true,
       },
+    }),
+    prisma.voucherTemplate.findMany({
+      select: {
+        id: true,
+        code: true,
+        title: true,
+        description: true,
+      }
     }),
   ]);
 
@@ -23,7 +33,7 @@ export async function GET() {
     where: { referredById: { not: null } },
   });
 
-  return NextResponse.json({ tiers, events, loyaltySettings, totalReferrals });
+  return NextResponse.json({ tiers, events, loyaltySettings, totalReferrals, voucherTemplates });
 }
 
 // POST — create or update tier/event
@@ -102,6 +112,8 @@ export async function POST(req: NextRequest) {
             referralRewardVoucher: body.referralRewardVoucher,
             referralRewardDesc: body.referralRewardDesc,
             referralShareImage: body.referralShareImage,
+            referralMinPurchase: body.referralMinPurchase,
+            referralMaxClaims: body.referralMaxClaims,
           },
         });
       }

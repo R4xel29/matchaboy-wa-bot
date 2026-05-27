@@ -275,13 +275,33 @@ export async function processReferralBonus(refereeUserId: string) {
 
   if (!firstCompletedOrder) return null;
 
+  // Cek syarat minimal belanja teman yang diajak
+  const minPurchaseNeeded = (settings as any).referralMinPurchase ?? 0;
+  if (firstCompletedOrder.total < minPurchaseNeeded) {
+    return { error: `Pesanan pertama teman Anda (Rp${firstCompletedOrder.total.toLocaleString('id-ID')}) belum memenuhi syarat minimal belanja Rp${minPurchaseNeeded.toLocaleString('id-ID')}` };
+  }
+
+  const referrerId = referee.referredById;
+
+  // Cek batas maksimum klaim jika diaktifkan (referralMaxClaims > 0)
+  const maxClaims = (settings as any).referralMaxClaims ?? 0;
+  if (maxClaims > 0) {
+    const claimedCount = await prisma.voucher.count({
+      where: {
+        userId: referrerId,
+        fromReferralUserId: { not: null },
+      },
+    });
+    if (claimedCount >= maxClaims) {
+      return { error: `Batas maksimum klaim bonus referral Anda (${maxClaims}x) telah tercapai.` };
+    }
+  }
+
   // Tandai bonus sudah diberikan
   await prisma.user.update({
     where: { id: refereeUserId },
     data: { referralBonusPaid: true },
   });
-
-  const referrerId = referee.referredById;
 
   // Gunakan kode template yang dikonfigurasi admin di Pengaturan Loyalty
   // Field: referralVoucherCode (default: 'REFERRAL_REWARD')

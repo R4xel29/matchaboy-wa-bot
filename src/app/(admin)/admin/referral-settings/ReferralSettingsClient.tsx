@@ -50,6 +50,14 @@ export default function ReferralSettingsClient() {
   const [referralEnabled, setReferralEnabled] = useState(true);
   const [referralShareImage, setReferralShareImage] = useState('/brand/og-preview.png');
   const [totalReferrals, setTotalReferrals] = useState(0);
+  const [voucherTemplates, setVoucherTemplates] = useState<{ id: string; code: string; title: string; description: string; }[]>([]);
+  const [referralRewardType, setReferralRewardType] = useState('VOUCHER');
+  const [referralRewardPoints, setReferralRewardPoints] = useState(5);
+  const [referralRewardVoucher, setReferralRewardVoucher] = useState('FREE_DRINK');
+  const [referralVoucherCode, setReferralVoucherCode] = useState('REFERRAL_REWARD');
+  const [referralRewardDesc, setReferralRewardDesc] = useState('1 Minuman Gratis (Hadiah Referral)');
+  const [referralMinPurchase, setReferralMinPurchase] = useState(30000);
+  const [referralMaxClaims, setReferralMaxClaims] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -96,6 +104,14 @@ export default function ReferralSettingsClient() {
       setReferralEnabled(data.loyaltySettings?.referralEnabled ?? true);
       setReferralShareImage(data.loyaltySettings?.referralShareImage ?? '/brand/og-preview.png');
       setTotalReferrals(data.totalReferrals || 0);
+      setVoucherTemplates(data.voucherTemplates || []);
+      setReferralRewardType(data.loyaltySettings?.referralRewardType ?? 'VOUCHER');
+      setReferralRewardPoints(data.loyaltySettings?.referralRewardPoints ?? 5);
+      setReferralRewardVoucher(data.loyaltySettings?.referralRewardVoucher ?? 'FREE_DRINK');
+      setReferralVoucherCode(data.loyaltySettings?.referralVoucherCode ?? 'REFERRAL_REWARD');
+      setReferralRewardDesc(data.loyaltySettings?.referralRewardDesc ?? '1 Minuman Gratis (Hadiah Referral)');
+      setReferralMinPurchase(data.loyaltySettings?.referralMinPurchase ?? 30000);
+      setReferralMaxClaims(data.loyaltySettings?.referralMaxClaims ?? 0);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -191,7 +207,14 @@ export default function ReferralSettingsClient() {
         body: JSON.stringify({
           type: 'settings',
           referralEnabled: finalEnabled,
-          referralShareImage: finalImg
+          referralShareImage: finalImg,
+          referralRewardType,
+          referralRewardPoints: parseInt(referralRewardPoints as any) || 0,
+          referralRewardVoucher,
+          referralVoucherCode,
+          referralRewardDesc,
+          referralMinPurchase: parseInt(referralMinPurchase as any) || 0,
+          referralMaxClaims: parseInt(referralMaxClaims as any) || 0,
         }),
       });
       if (res.ok) {
@@ -375,6 +398,115 @@ export default function ReferralSettingsClient() {
                 />
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Aturan Utama & Batasan Referral */}
+      <div className="bg-white rounded-2xl border border-border/40 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-violet-50 text-violet-600"><Gift className="w-5 h-5" /></div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Aturan Utama & Syarat Belanja</h3>
+              <p className="text-[10px] text-muted-foreground">Konfigurasi batas minimal belanja teman dan jenis hadiah yang didapat pengundang</p>
+            </div>
+          </div>
+          <button
+            onClick={() => saveGeneralSettings()}
+            disabled={saving}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Simpan Aturan
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {/* Syarat Minimal Belanja */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-muted-foreground">MINIMAL TRANSAKSI TEMAN (RP)</label>
+            <input
+              type="number"
+              value={referralMinPurchase}
+              onChange={(e) => setReferralMinPurchase(parseInt(e.target.value) || 0)}
+              placeholder="Contoh: 30000"
+              className="w-full px-3 py-2.5 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            />
+            <p className="text-[10px] text-muted-foreground">Teman yang diajak harus melakukan transaksi pertama minimal sebesar nominal ini agar pengundang berhak klaim reward.</p>
+          </div>
+
+          {/* Batas Maksimum Klaim */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-muted-foreground">BATAS MAKSIMAL KLAIM PER USER</label>
+            <input
+              type="number"
+              value={referralMaxClaims}
+              onChange={(e) => setReferralMaxClaims(parseInt(e.target.value) || 0)}
+              placeholder="0 = Tanpa batas"
+              className="w-full px-3 py-2.5 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            />
+            <p className="text-[10px] text-muted-foreground">Maksimal berapa kali seorang user bisa mengklaim hadiah dari mengundang teman (isi 0 untuk tidak terbatas).</p>
+          </div>
+
+          {/* Jenis Reward */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-muted-foreground">JENIS HADIAH PENGUNDANG</label>
+            <select
+              value={referralRewardType}
+              onChange={(e) => setReferralRewardType(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
+            >
+              <option value="VOUCHER">Voucher Diskon / Free Product</option>
+              <option value="POINTS">Poin Loyalitas</option>
+            </select>
+          </div>
+
+          {/* Dinamis Reward Detail */}
+          {referralRewardType === 'POINTS' ? (
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-muted-foreground">JUMLAH POIN HADIAH</label>
+              <input
+                type="number"
+                value={referralRewardPoints}
+                onChange={(e) => setReferralRewardPoints(parseInt(e.target.value) || 0)}
+                placeholder="Contoh: 5"
+                className="w-full px-3 py-2.5 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              />
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-muted-foreground">TEMPLATE VOUCHER REWARD</label>
+              <select
+                value={referralVoucherCode}
+                onChange={(e) => {
+                  setReferralVoucherCode(e.target.value);
+                  const selected = voucherTemplates.find(t => t.code === e.target.value);
+                  if (selected) {
+                    setReferralRewardDesc(selected.description);
+                  }
+                }}
+                className="w-full px-3 py-2.5 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
+              >
+                <option value="REFERRAL_REWARD">REFERRAL_REWARD (Default Minuman Gratis)</option>
+                {voucherTemplates.map(t => (
+                  <option key={t.id} value={t.code}>{t.title} ({t.code})</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Deskripsi Tampilan Hadiah */}
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="block text-xs font-bold text-muted-foreground">NAMA/DESKRIPSI HADIAH TAMPILAN</label>
+            <input
+              type="text"
+              value={referralRewardDesc}
+              onChange={(e) => setReferralRewardDesc(e.target.value)}
+              placeholder="Contoh: 1 Minuman Gratis (Hadiah Referral)"
+              className="w-full px-3 py-2.5 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            />
+            <p className="text-[10px] text-muted-foreground">Deskripsi hadiah yang akan dibaca oleh pengundang di halaman daftar klaim mereka.</p>
           </div>
         </div>
       </div>

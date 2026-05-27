@@ -72,8 +72,7 @@ const SETTING_ITEMS = [
 const LOYALTY_ITEMS = [
   { label: 'Kelola Voucher', href: '/admin/vouchers', icon: Ticket },
   { label: 'Loyalty Settings', href: '/admin/loyalty', icon: Gift },
-  { label: 'Referral Settings', href: '/admin/referral-settings', icon: Settings },
-  { label: 'Referral Tracking', href: '/admin/referrals', icon: Share2 },
+  { label: 'Kelola Referral', href: '/admin/referrals', icon: Share2 },
 ];
 
 const DELIVERY_ITEMS = [

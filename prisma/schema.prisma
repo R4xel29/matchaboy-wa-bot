@@ -448,13 +448,15 @@ model LoyaltySettings {
   referralRewardType    String  @default("VOUCHER")   // POINTS atau VOUCHER
   referralRewardPoints  Int     @default(5)           // Jika POINTS: berapa poin yang diberikan ke referrer
   referralRewardVoucher String  @default("FREE_DRINK") // Jika VOUCHER: jenis voucher untuk referrer
+  referralMinPurchase   Int     @default(30000)       // Minimal belanja teman untuk dapat bonus
+  referralMaxClaims     Int     @default(0)           // Maksimal klaim per user (0 = tidak terbatas)
+  referralRewardDesc    String  @default("1 Minuman Gratis (Hadiah Referral)")
 
   // Pengaturan Perhitungan Poin
   pointMode             String  @default("PER_TRANSACTION") // PER_TRANSACTION atau PER_AMOUNT
   pointPerTransaction   Int     @default(1)                  // Poin per transaksi (jika PER_TRANSACTION)
   pointPerAmount        Int     @default(10000)              // Per berapa rupiah = 1 poin (jika PER_AMOUNT)
   pointValue            Int     @default(1000)               // Nilai Rupiah dari 1 poin (contoh: 1 poin = Rp1.000)
-  referralRewardDesc    String  @default("1 Minuman Gratis (Hadiah Referral)")
 
   // Kode VoucherTemplate untuk setiap sistem reward (bisa diubah admin)
   welcomeVoucherCode      String  @default("WELCOME")          // Kode template voucher selamat datang (pengguna baru)
