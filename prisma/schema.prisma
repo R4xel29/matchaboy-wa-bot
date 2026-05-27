@@ -460,6 +460,7 @@ model LoyaltySettings {
   welcomeVoucherCode      String  @default("WELCOME")          // Kode template voucher selamat datang (pengguna baru)
   referralVoucherCode     String  @default("REFERRAL_REWARD")  // Kode template voucher reward untuk referrer
   tumblerVoucherCode2     String  @default("TUMBLER_REWARD")   // Kode template voucher reward tumbler
+  referralShareImage      String? @default("/brand/og-preview.png") // URL gambar preview saat link referral dibagikan
 
   // Pengaturan Easter Egg
   easterEggEnabled      Boolean @default(true)

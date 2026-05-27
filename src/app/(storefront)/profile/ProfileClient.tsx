@@ -2726,7 +2726,7 @@ function ReferralSection({ user }: { user: UserShape }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareWhatsApp = () => {
+  const handleShare = async () => {
     const referralUrl = `${window.location.origin}/register?ref=${user.referralCode}`;
     const text = `Selamat datang di Matchaboy! Kamu dapat Voucher Diskon Rp3.000, untuk pembelian minuman non-promo.
 
@@ -2738,26 +2738,19 @@ Yuk, simak cara pakainya di bawah ini:
 ${referralUrl}
 
 Voucher hanya berlaku 7 hari setelah kamu mendapatkan pesan ini. Buruan pakai vouchernya sekarang!`;
-    
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  const shareNative = async () => {
-    const referralUrl = `${window.location.origin}/register?ref=${user.referralCode}`;
-    const shareData = {
-      title: 'Matchaboy Referral',
-      text: 'Gabung Matchaboy dan dapatkan voucher diskon Rp3.000!',
-      url: referralUrl
-    };
 
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: 'Referral Matchaboy',
+          text: text,
+          url: referralUrl
+        });
       } catch (err) {
         console.error('Error sharing:', err);
       }
     } else {
-      copyReferralCode();
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
   };
 
@@ -2781,7 +2774,7 @@ Voucher hanya berlaku 7 hari setelah kamu mendapatkan pesan ini. Buruan pakai vo
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex-1 px-3.5 py-3 bg-[#FFFBF5] rounded-2xl border border-[#D4A574]/15 text-[12px] font-mono text-gray-600 truncate shadow-inner">
+          <div className="flex-1 px-3.5 py-3 bg-[#FFFBF5] rounded-2xl border border-[#D4A574]/15 text-[12px] font-mono text-gray-650 truncate shadow-inner">
             {origin ? `${origin}/register?ref=${user.referralCode}` : user.referralCode}
           </div>
           <button
@@ -2795,20 +2788,13 @@ Voucher hanya berlaku 7 hari setelah kamu mendapatkan pesan ini. Buruan pakai vo
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="pt-1">
           <button
-            onClick={shareWhatsApp}
-            className="py-3 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black rounded-2xl text-[12px] flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/10 active:scale-95 cursor-pointer"
-          >
-            <MessageCircle className="w-4 h-4 fill-white stroke-none" />
-            <span>Bagikan WA</span>
-          </button>
-          <button
-            onClick={shareNative}
-            className="py-3 px-4 bg-[#2E5A44] hover:bg-[#1E3F20] text-white font-black rounded-2xl text-[12px] flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-800/10 active:scale-95 cursor-pointer"
+            onClick={handleShare}
+            className="w-full py-3.5 px-4 bg-[#2E5A44] hover:bg-[#1E3F20] text-white font-black rounded-2xl text-[13px] flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-800/10 active:scale-95 cursor-pointer font-sans"
           >
             <Share2 className="w-4 h-4" />
-            <span>Share Teman</span>
+            <span>Bagikan Link Referral</span>
           </button>
         </div>
       </div>

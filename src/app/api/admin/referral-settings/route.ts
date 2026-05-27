@@ -13,6 +13,7 @@ export async function GET() {
         referralRewardPoints: true,
         referralRewardVoucher: true,
         referralRewardDesc: true,
+        referralShareImage: true,
       },
     }),
   ]);
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
             referralRewardPoints: body.referralRewardPoints,
             referralRewardVoucher: body.referralRewardVoucher,
             referralRewardDesc: body.referralRewardDesc,
+            referralShareImage: body.referralShareImage,
           },
         });
       }

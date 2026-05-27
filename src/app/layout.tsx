@@ -4,6 +4,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { PermissionPrompt } from "@/components/ui/PermissionPrompt";
 import { SplashProvider } from "@/components/providers/SplashProvider";
+import { prisma } from "@/lib/prisma";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,18 +25,55 @@ const outfit = Outfit({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Arus — Arum Seduh",
-  description:
-    "Nikmati seduhan terbaik dari Arus. Premium drinks & pastries delivered to your door.",
-  keywords: ["arum seduh", "arus", "coffee", "matcha", "delivery", "Jakarta"],
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Arus",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let shareImage = "/brand/og-preview.png";
+  try {
+    const settings = await prisma.loyaltySettings.findFirst({
+      select: { referralShareImage: true },
+    });
+    if (settings?.referralShareImage) {
+      shareImage = settings.referralShareImage;
+    }
+  } catch (e) {
+    console.error("Error fetching loyalty settings for OG image:", e);
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  return {
+    metadataBase: new URL(appUrl),
+    title: "Arus — Arum Seduh",
+    description:
+      "Nikmati seduhan terbaik dari Arus. Premium drinks & pastries delivered to your door.",
+    keywords: ["arum seduh", "arus", "coffee", "matcha", "delivery", "Jakarta"],
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Arus",
+    },
+    openGraph: {
+      title: "Arus — Arum Seduh",
+      description: "Nikmati seduhan terbaik dari Arus. Dapatkan voucher diskon khusus dengan mendaftar lewat link referral ini!",
+      images: [
+        {
+          url: shareImage,
+          width: 1200,
+          height: 630,
+          alt: "Arus Arum Seduh",
+        }
+      ],
+      type: "website",
+      siteName: "Arus",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Arus — Arum Seduh",
+      description: "Nikmati seduhan terbaik dari Arus. Premium drinks & pastries delivered to your door.",
+      images: [shareImage],
+    }
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

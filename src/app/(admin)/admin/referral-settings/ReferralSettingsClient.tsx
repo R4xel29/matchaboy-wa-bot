@@ -48,6 +48,7 @@ export default function ReferralSettingsClient() {
   const [tiers, setTiers] = useState<ReferralTier[]>([]);
   const [events, setEvents] = useState<ReferralEvent[]>([]);
   const [referralEnabled, setReferralEnabled] = useState(true);
+  const [referralShareImage, setReferralShareImage] = useState('/brand/og-preview.png');
   const [totalReferrals, setTotalReferrals] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,6 +93,7 @@ export default function ReferralSettingsClient() {
       setTiers(data.tiers || []);
       setEvents(data.events || []);
       setReferralEnabled(data.loyaltySettings?.referralEnabled ?? true);
+      setReferralShareImage(data.loyaltySettings?.referralShareImage ?? '/brand/og-preview.png');
       setTotalReferrals(data.totalReferrals || 0);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -176,16 +178,37 @@ export default function ReferralSettingsClient() {
     });
   };
 
+  const saveGeneralSettings = async (enabledVal?: boolean, imgVal?: string) => {
+    const finalEnabled = enabledVal !== undefined ? enabledVal : referralEnabled;
+    const finalImg = imgVal !== undefined ? imgVal : referralShareImage;
+    
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/referral-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'settings',
+          referralEnabled: finalEnabled,
+          referralShareImage: finalImg
+        }),
+      });
+      if (res.ok) {
+        showToast('Pengaturan umum referral berhasil disimpan', 'success');
+      } else {
+        showToast('Gagal menyimpan pengaturan umum', 'error');
+      }
+    } catch {
+      showToast('Gagal menyimpan pengaturan umum', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleEnabled = async () => {
     const newVal = !referralEnabled;
     setReferralEnabled(newVal);
-    try {
-      await fetch('/api/admin/referral-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'settings', referralEnabled: newVal }),
-      });
-    } catch { setReferralEnabled(!newVal); }
+    await saveGeneralSettings(newVal, referralShareImage);
   };
 
   if (loading) {
@@ -240,6 +263,74 @@ export default function ReferralSettingsClient() {
               <p className="text-2xl font-bold text-foreground">{events.filter(e => e.isActive).length}</p>
               <p className="text-[11px] text-muted-foreground font-medium">Event Aktif</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pengaturan Umum */}
+      <div className="bg-white rounded-2xl border border-border/40 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-violet-50 text-violet-600"><Share2 className="w-5 h-5" /></div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Pengaturan Umum Referral</h3>
+            <p className="text-[10px] text-muted-foreground">Konfigurasi dasar program referral dan tampilan preview share link</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-muted-foreground">STATUS PROGRAM</label>
+            <div className="flex items-center gap-2">
+              <button onClick={toggleEnabled} className="flex items-center gap-2 text-sm font-medium text-foreground">
+                {referralEnabled ? (
+                  <>
+                    <ToggleRight className="w-8 h-8 text-emerald-500 cursor-pointer" />
+                    <span>Program Aktif (Pelanggan bisa membagikan link referral)</span>
+                  </>
+                ) : (
+                  <>
+                    <ToggleLeft className="w-8 h-8 text-muted-foreground/40 cursor-pointer" />
+                    <span className="text-muted-foreground">Program Non-aktif</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-muted-foreground">URL GAMBAR PREVIEW SHARE LINK (OpenGraph Image)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={referralShareImage}
+                onChange={(e) => setReferralShareImage(e.target.value)}
+                placeholder="Contoh: /brand/og-preview.png"
+                className="flex-1 px-3 py-2 text-sm bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              />
+              <button
+                onClick={() => saveGeneralSettings(referralEnabled, referralShareImage)}
+                disabled={saving}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Simpan
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Gunakan path gambar relatif (cth: <code>/brand/og-preview.png</code>) atau link gambar absolut. Rasio rekomendasi 1200x630 piksel.
+            </p>
+            {referralShareImage && (
+              <div className="mt-2 relative w-full max-w-[240px] aspect-[1200/630] rounded-xl border border-border overflow-hidden bg-gray-50 flex items-center justify-center">
+                <img
+                  src={referralShareImage}
+                  alt="Preview Share"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/1200x630?text=Gambar+Tidak+Ditemukan';
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
