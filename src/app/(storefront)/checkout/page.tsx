@@ -77,22 +77,8 @@ export default function CheckoutPage() {
 
   // Voucher state
   const [voucherCode, setVoucherCode] = useState('');
-  const [appliedVoucher, setAppliedVoucher] = useState<{
-    id: string;
-    code: string;
-    type: string;
-    description: string;
-    discountAmount?: number;
-    minPurchase?: number;
-    maxDiscount?: number | null;
-    validProductIds?: string[] | null;
-    validProductNames?: string[] | null;
-    template?: {
-      maxDiscount?: number | null;
-      minPurchase?: number;
-      validProductIds?: string | null;
-    } | null;
-  } | null>(null);
+  const appliedVoucher = useCartStore((s) => s.appliedVoucher);
+  const setAppliedVoucher = useCartStore((s) => s.setAppliedVoucher);
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherError, setVoucherError] = useState('');
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);

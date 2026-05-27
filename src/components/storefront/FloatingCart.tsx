@@ -21,6 +21,8 @@ export function FloatingCart() {
 
   const count = totalItems();
   const price = totalPrice();
+  const discount = useCartStore((s) => s.getVoucherDiscount ? s.getVoucherDiscount() : 0);
+  const finalPrice = Math.max(0, price - discount);
 
   if (!mounted) return null;
   if (pathname?.startsWith('/profile') || pathname?.startsWith('/checkout') || pathname?.startsWith('/orders')) return null;
@@ -59,7 +61,12 @@ export function FloatingCart() {
                     {count} {count === 1 ? 'item' : 'items'}
                   </p>
                   <p className="font-bold text-sm">
-                    {formatRupiah(price)}
+                    {discount > 0 && (
+                      <span className="line-through text-brand-200/60 mr-1.5 text-xs">
+                        {formatRupiah(price)}
+                      </span>
+                    )}
+                    {formatRupiah(finalPrice)}
                   </p>
                 </div>
               </div>
