@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useStorefrontContext } from '@/app/(storefront)/layout';
@@ -52,6 +52,13 @@ export default function CheckoutPage() {
   const [pickupTime, setPickupTime] = useState<string | null>('Sekarang');
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [tempPickupTime, setTempPickupTime] = useState<string>('Sekarang');
+
+  const hourContainerRef = useRef<HTMLDivElement>(null);
+  const minContainerRef = useRef<HTMLDivElement>(null);
+  const hourScrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const minScrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingProgrammatically = useRef<boolean>(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [showPickupWarning, setShowPickupWarning] = useState(false);
@@ -280,6 +287,25 @@ export default function CheckoutPage() {
       setHasTumbler(false);
     }
   }, [orderType]);
+
+  // Reset pickupTime if invalid for delivery when switching to DELIVERY
+  useEffect(() => {
+    if (orderType === 'DELIVERY' && pickupTime && pickupTime !== 'Sekarang') {
+      const targetDate = pickupDate || new Date().toLocaleDateString('en-CA');
+      const { openTime: targetOpenTime } = getStoreHoursForDate(targetDate);
+      const [openH, openM] = targetOpenTime.split(':').map(Number);
+      const openMinutes = openH * 60 + openM;
+      const deliveryMinSlot = openMinutes + 30; // 30 minutes after opening
+      
+      const [pH, pM] = pickupTime.split(':').map(Number);
+      const pickupMinutes = pH * 60 + pM;
+      
+      if (pickupMinutes < deliveryMinSlot) {
+        setPickupTime(null);
+        setTempPickupTime('');
+      }
+    }
+  }, [orderType, pickupTime, pickupDate]);
 
   const [deliveryAddress, setDeliveryAddress] = useState<{ label: string, detail: string, streetDetail: string, lat: number, lng: number, distance: number, deliveryFee: number } | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
@@ -690,8 +716,8 @@ export default function CheckoutPage() {
     // Check if selected date is today in local timezone
     const isToday = tempPickupDate === now.toLocaleDateString('en-CA');
 
-    const currentMinutes = now.getHours() * 65 + now.getMinutes();
-    const minSlot = isToday ? (now.getHours() * 60 + now.getMinutes()) + 15 : openMinutes;
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const minSlot = isToday ? currentMinutes + 15 : openMinutes;
 
     const deliveryMinSlot = orderType === 'DELIVERY' ? openMinutes + 30 : openMinutes;
     const startMinutes = Math.max(deliveryMinSlot, minSlot);
@@ -822,6 +848,103 @@ export default function CheckoutPage() {
   const handleMinSelect = (min: string) => {
     const hour = tempHour || (availableHours.length > 0 ? availableHours[0] : '08');
     setTempPickupTime(`${hour}:${min}`);
+  };
+
+  // Scroll synchronization effect
+  useEffect(() => {
+    if (isScheduleModalOpen) {
+      isScrollingProgrammatically.current = true;
+      const timer = setTimeout(() => {
+        if (hourContainerRef.current) {
+          const selectedEl = hourContainerRef.current.querySelector('[data-selected="true"]');
+          if (selectedEl) {
+            selectedEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        }
+        if (minContainerRef.current) {
+          const selectedEl = minContainerRef.current.querySelector('[data-selected="true"]');
+          if (selectedEl) {
+            selectedEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        }
+        // Let programmatic scrolling finish before allowing scroll listener
+        setTimeout(() => {
+          isScrollingProgrammatically.current = false;
+        }, 500);
+      }, 80);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [isScheduleModalOpen, tempHour, tempMin]);
+
+  // Robust Date Selection and State Reset
+  useEffect(() => {
+    if (!tempPickupDate) return;
+    const now = new Date();
+    const isToday = tempPickupDate === now.toLocaleDateString('en-CA');
+    
+    if (isToday) {
+      if (!tempPickupTime) {
+        setTempPickupTime('Sekarang');
+      }
+    } else {
+      if (tempPickupTime === 'Sekarang' || !modalTimeSlots.includes(tempPickupTime)) {
+        if (modalTimeSlots.length > 0) {
+          setTempPickupTime(modalTimeSlots[0]);
+        } else {
+          setTempPickupTime('');
+        }
+      }
+    }
+  }, [tempPickupDate, modalTimeSlots]);
+
+  const handleScroll = (container: HTMLDivElement, isHour: boolean) => {
+    if (isScrollingProgrammatically.current) return;
+    const rect = container.getBoundingClientRect();
+    const containerCenter = rect.top + rect.height / 2;
+    
+    const children = Array.from(container.children) as HTMLElement[];
+    let closestVal = '';
+    let minDistance = Infinity;
+    
+    children.forEach((child) => {
+      const childRect = child.getBoundingClientRect();
+      const childCenter = childRect.top + childRect.height / 2;
+      const distance = Math.abs(containerCenter - childCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestVal = child.getAttribute('data-value') || '';
+      }
+    });
+    
+    if (closestVal) {
+      if (isHour) {
+        if (closestVal !== tempHour) {
+          handleHourSelect(closestVal);
+        }
+      } else {
+        if (closestVal !== tempMin) {
+          handleMinSelect(closestVal);
+        }
+      }
+    }
+  };
+
+  const handleHourScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    if (hourScrollTimeout.current) clearTimeout(hourScrollTimeout.current);
+    hourScrollTimeout.current = setTimeout(() => {
+      handleScroll(container, true);
+    }, 150);
+  };
+
+  const handleMinScrollEvent = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    if (minScrollTimeout.current) clearTimeout(minScrollTimeout.current);
+    minScrollTimeout.current = setTimeout(() => {
+      handleScroll(container, false);
+    }, 150);
   };
 
   const handleApplyVoucher = async () => {
@@ -1956,7 +2079,7 @@ export default function CheckoutPage() {
             >
               <Clock className="w-4 h-4 text-[#8C7864]" />
               <span>
-                {pickupTime === 'Sekarang'
+                {!pickupTime || pickupTime === 'Sekarang'
                   ? 'Jadwal'
                   : `${pickupTime} - ${getEndTime(pickupTime)}`}
               </span>
@@ -2081,6 +2204,8 @@ export default function CheckoutPage() {
                     <>
                       {/* Hour Picker */}
                       <div 
+                        ref={hourContainerRef}
+                        onScroll={handleHourScrollEvent}
                         className="w-1/2 h-[160px] overflow-y-auto scrollbar-hide flex flex-col items-center py-12 gap-2 select-none snap-y snap-mandatory scroll-smooth"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       >
@@ -2090,6 +2215,8 @@ export default function CheckoutPage() {
                             <button
                               key={hour}
                               type="button"
+                              data-value={hour}
+                              data-selected={isSelected ? "true" : "false"}
                               onClick={() => handleHourSelect(hour)}
                               className={`flex justify-center items-center py-1.5 px-4 rounded-xl transition-all duration-300 w-full max-w-[80px] shrink-0 snap-center ${
                                 isSelected
@@ -2108,6 +2235,8 @@ export default function CheckoutPage() {
 
                       {/* Minute Picker */}
                       <div 
+                        ref={minContainerRef}
+                        onScroll={handleMinScrollEvent}
                         className="w-1/2 h-[160px] overflow-y-auto scrollbar-hide flex flex-col items-center py-12 gap-2 select-none snap-y snap-mandatory scroll-smooth"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                       >
@@ -2117,6 +2246,8 @@ export default function CheckoutPage() {
                             <button
                               key={min}
                               type="button"
+                              data-value={min}
+                              data-selected={isSelected ? "true" : "false"}
                               onClick={() => handleMinSelect(min)}
                               className={`flex justify-center items-center py-1.5 px-4 rounded-xl transition-all duration-300 w-full max-w-[80px] shrink-0 snap-center ${
                                 isSelected
