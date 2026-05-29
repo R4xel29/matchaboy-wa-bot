@@ -5,9 +5,10 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Check } from 'lucide-react';
 import type { Product, IceLevel, SugarLevel, AddOn } from '@/types';
-import { formatRupiah } from '@/lib/utils';
+import { formatRupiah, getActivePromo } from '@/lib/utils';
 import { useCartStore } from '@/stores/cart-store';
 import { ADD_ONS } from '@/lib/constants';
+import { PromoCountdown } from './PromoCountdown';
 
 interface ProductModalProps {
   product: Product | null;
@@ -129,9 +130,12 @@ export function ProductModal({
     return bundleSelectionsArray.reduce((sum, item: any) => sum + (item.priceAdjustment || 0), 0);
   }, [bundleSelectionsArray]);
 
+  const activePromo = product ? getActivePromo(product) : null;
+  const baseProductPrice = activePromo ? activePromo.promoPrice : (product?.price ?? 0);
+
   const unitPrice = product?.modifiers?.isBundle
-    ? ((product.price ?? 0) + bundleAdjustmentsTotal)
-    : ((product?.price ?? 0) + sizePrice + addOnTotal);
+    ? (baseProductPrice + bundleAdjustmentsTotal)
+    : (baseProductPrice + sizePrice + addOnTotal);
   
   const totalPrice = unitPrice * quantity;
 
@@ -182,12 +186,14 @@ export function ProductModal({
 
   const handleAddToCart = () => {
     if (!product) return;
+    const promo = getActivePromo(product);
+    const effectiveBasePrice = promo ? promo.promoPrice : product.price;
     
     const itemData = {
       productId: product.id,
       name: product.name,
       image: product.image,
-      basePrice: product.price,
+      basePrice: effectiveBasePrice,
       quantity,
       iceLevel: product.modifiers?.isBundle ? 'Normal Ice' as const : iceLevel,
       sugarLevel: product.modifiers?.isBundle ? 'Normal Sugar' as const : sugarLevel,
@@ -282,6 +288,19 @@ export function ProductModal({
               </div>
 
               <div className="px-5 pt-4 pb-6 space-y-5">
+                {/* Flash Sale / Promo Banner */}
+                {activePromo && (
+                  <div className="-mx-5 -mt-4 px-5 py-3 bg-gradient-to-r from-rose-600 to-orange-500 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-black text-xs uppercase tracking-wider">🔥 Flash Sale</span>
+                      <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        Hemat {formatRupiah(product.price - activePromo.promoPrice)}
+                      </span>
+                    </div>
+                    <PromoCountdown endDate={activePromo.endDate} className="text-white" />
+                  </div>
+                )}
+
                 {/* Title & Description */}
                 <div>
                   <h2 className="font-heading font-bold text-xl text-foreground">
@@ -291,14 +310,27 @@ export function ProductModal({
                     {product.description}
                   </p>
                   <div className="mt-2 flex items-baseline gap-2">
-                    {product.modifiers?.originalPrice && product.modifiers.originalPrice > product.price && (
-                      <span className="text-sm text-muted-foreground line-through font-medium">
-                        {formatRupiah(product.modifiers.originalPrice)}
-                      </span>
+                    {activePromo ? (
+                      <>
+                        <span className="text-sm text-muted-foreground line-through font-medium">
+                          {formatRupiah(product.price)}
+                        </span>
+                        <span className="font-black text-xl text-rose-600">
+                          {formatRupiah(activePromo.promoPrice)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        {product.modifiers?.originalPrice && product.modifiers.originalPrice > product.price && (
+                          <span className="text-sm text-muted-foreground line-through font-medium">
+                            {formatRupiah(product.modifiers.originalPrice)}
+                          </span>
+                        )}
+                        <span className="font-bold text-lg text-brand-700">
+                          {formatRupiah(product.price)}
+                        </span>
+                      </>
                     )}
-                    <span className="font-bold text-lg text-brand-700">
-                      {formatRupiah(product.price)}
-                    </span>
                   </div>
                 </div>
 

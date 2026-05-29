@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowLeft, Star, Flame, Sparkles, ChevronDown, MapPin } from 'lucide-react';
-import { formatRupiah } from '@/lib/utils';
+import { formatRupiah, getActivePromo } from '@/lib/utils';
 import Image from 'next/image';
 import type { Product, Category } from '@/types';
+import { PromoCountdown } from './PromoCountdown';
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -287,6 +288,10 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                     {comboProducts.map((p) => {
                       const isSoldOut = p.badge === 'sold-out';
+                      const promo = getActivePromo(p);
+                      const displayPrice = promo ? promo.promoPrice : p.price;
+                      const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                       return (
                         <div
                           key={p.id}
@@ -319,9 +324,20 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                                   <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[#D4AF37] text-[7px] font-bold shadow-sm flex items-center gap-0.5">
                                     <Star className="w-2.5 h-2.5 fill-[#D4AF37] stroke-none" /> 4.9
                                   </span>
-                                  <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-[#946F48] text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
-                                    Combo
-                                  </span>
+                                  {promo && (
+                                    <div className="absolute top-1.5 left-1.5 z-20">
+                                      <PromoCountdown endDate={promo.endDate} compact />
+                                    </div>
+                                  )}
+                                  {promo ? (
+                                    <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
+                                      🔥 Promo
+                                    </span>
+                                  ) : (
+                                    <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-[#946F48] text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
+                                      Combo
+                                    </span>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -330,13 +346,13 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                             {p.name}
                           </p>
                           <div className="flex flex-col mt-1">
-                            {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                            {originalPrice && originalPrice > displayPrice && (
                               <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
-                                {formatRupiah(p.modifiers.originalPrice)}
+                                {formatRupiah(originalPrice)}
                               </span>
                             )}
                             <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] leading-none">
-                              {formatRupiah(p.price)}
+                              {formatRupiah(displayPrice)}
                             </p>
                           </div>
                         </div>
@@ -357,6 +373,10 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                     {spesialProducts.map((p) => {
                       const isSoldOut = p.badge === 'sold-out';
+                      const promo = getActivePromo(p);
+                      const displayPrice = promo ? promo.promoPrice : p.price;
+                      const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                       return (
                         <div
                           key={p.id}
@@ -389,9 +409,20 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                                   <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[#D4AF37] text-[7px] font-bold shadow-sm flex items-center gap-0.5">
                                     <Star className="w-2.5 h-2.5 fill-[#D4AF37] stroke-none" /> 4.9
                                   </span>
-                                  <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-[#946F48] text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
-                                    <Flame className="w-2.5 h-2.5 text-[#D4AF37] fill-[#D4AF37]" /> Best
-                                  </span>
+                                  {promo && (
+                                    <div className="absolute top-1.5 left-1.5 z-20">
+                                      <PromoCountdown endDate={promo.endDate} compact />
+                                    </div>
+                                  )}
+                                  {promo ? (
+                                    <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
+                                      🔥 Promo
+                                    </span>
+                                  ) : (
+                                    <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-[#946F48] text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
+                                      <Flame className="w-2.5 h-2.5 text-[#D4AF37] fill-[#D4AF37]" /> Best
+                                    </span>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -400,13 +431,13 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                             {p.name}
                           </p>
                           <div className="flex flex-col mt-1">
-                            {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                            {originalPrice && originalPrice > displayPrice && (
                               <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
-                                {formatRupiah(p.modifiers.originalPrice)}
+                                {formatRupiah(originalPrice)}
                               </span>
                             )}
                             <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] leading-none">
-                              {formatRupiah(p.price)}
+                              {formatRupiah(displayPrice)}
                             </p>
                           </div>
                         </div>
@@ -427,6 +458,10 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                     {baruProducts.map((p) => {
                       const isSoldOut = p.badge === 'sold-out';
+                      const promo = getActivePromo(p);
+                      const displayPrice = promo ? promo.promoPrice : p.price;
+                      const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                       return (
                         <div
                           key={p.id}
@@ -459,9 +494,20 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                                   <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[#D4AF37] text-[7px] font-bold shadow-sm flex items-center gap-0.5">
                                     <Star className="w-2.5 h-2.5 fill-[#D4AF37] stroke-none" /> 4.8
                                   </span>
-                                  <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-[#FAF6EE] text-[#946F48] border border-[#EADFC9]/30 text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
-                                    <Sparkles className="w-2.5 h-2.5 text-[#D4AF37]" /> New
-                                  </span>
+                                  {promo && (
+                                    <div className="absolute top-1.5 left-1.5 z-20">
+                                      <PromoCountdown endDate={promo.endDate} compact />
+                                    </div>
+                                  )}
+                                  {promo ? (
+                                    <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
+                                      🔥 Promo
+                                    </span>
+                                  ) : (
+                                    <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-[#FAF6EE] text-[#946F48] border border-[#EADFC9]/30 text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5">
+                                      <Sparkles className="w-2.5 h-2.5 text-[#D4AF37]" /> New
+                                    </span>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -470,13 +516,13 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                             {p.name}
                           </p>
                           <div className="flex flex-col mt-1">
-                            {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                            {originalPrice && originalPrice > displayPrice && (
                               <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
-                                {formatRupiah(p.modifiers.originalPrice)}
+                                {formatRupiah(originalPrice)}
                               </span>
                             )}
                             <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] leading-none">
-                              {formatRupiah(p.price)}
+                              {formatRupiah(displayPrice)}
                             </p>
                           </div>
                         </div>
@@ -544,6 +590,9 @@ function MenuProductCard({
   onClick: (product: Product) => void;
 }) {
   const isSoldOut = product.badge === 'sold-out';
+  const promo = getActivePromo(product);
+  const displayPrice = promo ? promo.promoPrice : product.price;
+  const originalPrice = promo ? product.price : (product.modifiers?.originalPrice || null);
 
   const badgeConfig: Record<string, { bg: string; text: string; label: string; icon?: 'flame' | 'sparkle' }> = {
     'best-seller': { bg: 'bg-[#946F48]', text: 'text-white', label: 'Best Seller', icon: 'flame' },
@@ -583,8 +632,19 @@ function MenuProductCard({
               <Star className="w-2.5 h-2.5 fill-[#D4AF37] stroke-none" /> 4.9
             </span>
 
+            {/* Promo Countdown Overlay */}
+            {promo && !isSoldOut && (
+              <div className="absolute top-1.5 left-1.5 z-20">
+                <PromoCountdown endDate={promo.endDate} compact />
+              </div>
+            )}
+
             {/* Badge */}
-            {badge && (
+            {promo ? (
+              <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5 border border-transparent">
+                🔥 Promo
+              </span>
+            ) : badge && (
               <span className={`absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded-md ${badge.bg} ${badge.text} text-[7px] font-extrabold shadow-sm uppercase tracking-wider flex items-center gap-0.5 border ${product.badge === 'new' ? 'border-[#EADFC9]/30' : 'border-transparent'}`}>
                 {badge.icon === 'flame' && <Flame className="w-2.5 h-2.5 text-[#D4AF37] fill-[#D4AF37]" />}
                 {badge.icon === 'sparkle' && <Sparkles className="w-2.5 h-2.5 text-[#D4AF37]" />}
@@ -619,13 +679,13 @@ function MenuProductCard({
       {/* Harga + Tombol Tambah */}
       <div className="mt-2.5 pt-2 border-t border-[#EADFC9]/25 flex items-center justify-between">
         <div className="flex flex-col">
-          {product.modifiers?.originalPrice && product.modifiers.originalPrice > product.price && (
+          {originalPrice && originalPrice > displayPrice && (
             <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
-              {formatRupiah(product.modifiers.originalPrice)}
+              {formatRupiah(originalPrice)}
             </span>
           )}
           <span className="font-serif font-black text-[11px] text-[#B48A5E]">
-            {formatRupiah(product.price)}
+            {formatRupiah(displayPrice)}
           </span>
         </div>
 

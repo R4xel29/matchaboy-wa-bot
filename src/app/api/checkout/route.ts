@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, getClientId } from '@/lib/rate-limit'
 import { calculateDeliveryFee } from '@/lib/delivery-utils'
+import { getActivePromo } from '@/lib/utils'
 
 
 const formatCurrency = (n: number) => `Rp${n.toLocaleString('id-ID')}`
@@ -181,7 +182,8 @@ export async function POST(req: Request) {
                 hasFreeShippingBundle = true
             }
 
-            let secureItemPrice = dbProduct.price;
+            const activePromo = getActivePromo(dbProduct);
+            let secureItemPrice = activePromo ? activePromo.promoPrice : dbProduct.price;
 
             if (dbModifiers.isBundle && item.bundleSelections && Array.isArray(item.bundleSelections)) {
                 let secureBundleAdjustments = 0;
@@ -303,7 +305,8 @@ export async function POST(req: Request) {
                             const dbProduct = dbProducts.find(p => p.id === item.productId)
                             if (dbProduct) {
                                 // Add-ons adjustment if applicable
-                                let secureItemPrice = dbProduct.price
+                                const activePromo = getActivePromo(dbProduct)
+                                let secureItemPrice = activePromo ? activePromo.promoPrice : dbProduct.price
                                 let dbModifiers: any = {}
                                 if (dbProduct.modifiers) {
                                     try { dbModifiers = JSON.parse(dbProduct.modifiers) } catch {}
@@ -348,7 +351,8 @@ export async function POST(req: Request) {
                             if (isProductValidForVoucher(item.productId, template.validProductIds)) {
                                 const dbProduct = dbProducts.find(p => p.id === item.productId)
                                 if (dbProduct) {
-                                    let secureItemPrice = dbProduct.price
+                                    const activePromo = getActivePromo(dbProduct)
+                                    let secureItemPrice = activePromo ? activePromo.promoPrice : dbProduct.price
                                     let dbModifiers: any = {}
                                     if (dbProduct.modifiers) {
                                         try { dbModifiers = JSON.parse(dbProduct.modifiers) } catch {}
@@ -436,7 +440,8 @@ export async function POST(req: Request) {
                         for (const item of body.items) {
                             const dbProduct = dbProducts.find(p => p.id === item.productId)
                             if (dbProduct) {
-                                let secureItemPrice = dbProduct.price
+                                const activePromo = getActivePromo(dbProduct)
+                                let secureItemPrice = activePromo ? activePromo.promoPrice : dbProduct.price
                                 let dbModifiers: any = {}
                                 if (dbProduct.modifiers) {
                                     try { dbModifiers = JSON.parse(dbProduct.modifiers) } catch {}
@@ -516,7 +521,8 @@ export async function POST(req: Request) {
                         for (const item of body.items) {
                             const dbProduct = dbProducts.find(p => p.id === item.productId)
                             if (dbProduct) {
-                                let secureItemPrice = dbProduct.price
+                                const activePromo = getActivePromo(dbProduct)
+                                let secureItemPrice = activePromo ? activePromo.promoPrice : dbProduct.price
                                 let dbModifiers: any = {}
                                 if (dbProduct.modifiers) {
                                     try { dbModifiers = JSON.parse(dbProduct.modifiers) } catch {}

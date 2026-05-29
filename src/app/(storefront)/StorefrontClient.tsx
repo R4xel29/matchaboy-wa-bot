@@ -7,9 +7,10 @@ import { useToast } from '@/components/ui/Toast';
 import { useStorefrontContext } from './layout';
 import type { Product, Category } from '@/types';
 import Image from 'next/image';
-import { formatRupiah } from '@/lib/utils';
+import { formatRupiah, getActivePromo } from '@/lib/utils';
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion';
 import { Star, Sparkles, Flame, MessageCircle, Info, ChevronRight, ShoppingBag, Clock, Gift, Copy, Check, Share2 } from 'lucide-react';
+import { PromoCountdown } from '@/components/storefront/PromoCountdown';
 
 // Lazy-load heavy modal components (only shown on user interaction)
 const ProductModal = dynamic(() => import('@/components/storefront/ProductModal').then(m => ({ default: m.ProductModal })), { ssr: false });
@@ -502,6 +503,10 @@ export default function StorefrontClient({
               <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
                 {comboProducts.map((p) => {
                   const isSoldOut = p.badge === 'sold-out';
+                  const promo = getActivePromo(p);
+                  const displayPrice = promo ? promo.promoPrice : p.price;
+                  const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                   return (
                     <div 
                       key={p.id}
@@ -530,9 +535,16 @@ export default function StorefrontClient({
                               </span>
                             </div>
                           ) : (
-                            <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-[#D4A574] text-[8px] font-black shadow-sm flex items-center gap-0.5 leading-none">
-                              <Star className="w-3 h-3 fill-[#D4A574] stroke-none" /> 4.9
-                            </span>
+                            <>
+                              <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-[#D4A574] text-[8px] font-black shadow-sm flex items-center gap-0.5 leading-none">
+                                <Star className="w-3 h-3 fill-[#D4A574] stroke-none" /> 4.9
+                              </span>
+                              {promo && (
+                                <div className="absolute top-1.5 left-1.5 z-20">
+                                  <PromoCountdown endDate={promo.endDate} compact />
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       )}
@@ -542,13 +554,13 @@ export default function StorefrontClient({
                           {p.name}
                         </p>
                         <div className="flex flex-col mt-2">
-                          {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                          {originalPrice && originalPrice > displayPrice && (
                             <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
-                              {formatRupiah(p.modifiers.originalPrice)}
+                              {formatRupiah(originalPrice)}
                             </span>
                           )}
                           <p className="font-bold text-xs text-[#B48A5E] leading-none">
-                            {formatRupiah(p.price)}
+                            {formatRupiah(displayPrice)}
                           </p>
                         </div>
                       </div>
@@ -573,6 +585,10 @@ export default function StorefrontClient({
             <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
               {spesialProducts.map((p) => {
                 const isSoldOut = p.badge === 'sold-out';
+                const promo = getActivePromo(p);
+                const displayPrice = promo ? promo.promoPrice : p.price;
+                const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                 return (
                   <div 
                     key={p.id}
@@ -596,14 +612,21 @@ export default function StorefrontClient({
                         />
                         {isSoldOut ? (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-                            <span className="bg-black/80 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-md tracking-wider uppercase">
+                            <span className="bg-black/85 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-md tracking-wider uppercase">
                               Habis
                             </span>
                           </div>
                         ) : (
-                          <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-[#D4A574] text-[8px] font-black shadow-sm flex items-center gap-0.5 leading-none">
-                            <Star className="w-3 h-3 fill-[#D4A574] stroke-none" /> 4.9
-                          </span>
+                          <>
+                            <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-lg bg-white/90 backdrop-blur-md text-[#D4A574] text-[8px] font-black shadow-sm flex items-center gap-0.5 leading-none">
+                              <Star className="w-3 h-3 fill-[#D4A574] stroke-none" /> 4.9
+                            </span>
+                            {promo && (
+                              <div className="absolute top-1.5 left-1.5 z-20">
+                                <PromoCountdown endDate={promo.endDate} compact />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
@@ -613,13 +636,13 @@ export default function StorefrontClient({
                         {p.name}
                       </p>
                       <div className="mt-2 flex flex-col items-baseline">
-                        {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                        {originalPrice && originalPrice > displayPrice && (
                           <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
-                            {formatRupiah(p.modifiers.originalPrice)}
+                            {formatRupiah(originalPrice)}
                           </span>
                         )}
                         <span className="font-bold text-xs text-[#B48A5E]">
-                          {formatRupiah(p.price)}
+                          {formatRupiah(displayPrice)}
                         </span>
                       </div>
                     </div>
@@ -643,6 +666,10 @@ export default function StorefrontClient({
             <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
               {baruProducts.map((p) => {
                 const isSoldOut = p.badge === 'sold-out';
+                const promo = getActivePromo(p);
+                const displayPrice = promo ? promo.promoPrice : p.price;
+                const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                 return (
                   <div 
                     key={p.id}
@@ -671,9 +698,22 @@ export default function StorefrontClient({
                             </span>
                           </div>
                         ) : (
-                          <span className="absolute bottom-1.5 left-1.5 z-10 px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#2E7D32] text-[8px] font-black shadow-sm uppercase tracking-wider flex items-center gap-0.5 leading-none">
-                            New
-                          </span>
+                          <>
+                            {promo && (
+                              <div className="absolute top-1.5 left-1.5 z-20">
+                                <PromoCountdown endDate={promo.endDate} compact />
+                              </div>
+                            )}
+                            {promo ? (
+                              <span className="absolute bottom-1.5 left-1.5 z-10 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[8px] font-black shadow-sm uppercase tracking-wider flex items-center gap-0.5 leading-none">
+                                Promo
+                              </span>
+                            ) : (
+                              <span className="absolute bottom-1.5 left-1.5 z-10 px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#2E7D32] text-[8px] font-black shadow-sm uppercase tracking-wider flex items-center gap-0.5 leading-none">
+                                New
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
@@ -683,13 +723,13 @@ export default function StorefrontClient({
                         {p.name}
                       </p>
                       <div className="flex flex-col mt-2">
-                        {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                        {originalPrice && originalPrice > displayPrice && (
                           <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
-                            {formatRupiah(p.modifiers.originalPrice)}
+                            {formatRupiah(originalPrice)}
                           </span>
                         )}
                         <p className="font-bold text-xs text-[#B48A5E] leading-none">
-                          {formatRupiah(p.price)}
+                          {formatRupiah(displayPrice)}
                         </p>
                       </div>
                     </div>
@@ -713,6 +753,10 @@ export default function StorefrontClient({
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {makananProducts.map((p) => {
                 const isSoldOut = p.badge === 'sold-out';
+                const promo = getActivePromo(p);
+                const displayPrice = promo ? promo.promoPrice : p.price;
+                const originalPrice = promo ? p.price : (p.modifiers?.originalPrice || null);
+
                 return (
                   <div 
                     key={p.id}
@@ -734,28 +778,36 @@ export default function StorefrontClient({
                             isSoldOut ? 'grayscale brightness-50' : ''
                           }`}
                         />
-                        {isSoldOut && (
+                        {isSoldOut ? (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
                             <span className="bg-black/80 text-white font-extrabold text-[8px] px-2 py-0.5 rounded-md tracking-wider uppercase">
                               Habis
                             </span>
                           </div>
+                        ) : (
+                          <>
+                            {promo && (
+                              <div className="absolute top-1.5 left-1.5 z-20">
+                                <PromoCountdown endDate={promo.endDate} compact />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
 
-                    <div className="flex-1 flex flex-col justify-between">
+                    <div className="flex-grow flex flex-col justify-between">
                       <p className="font-serif font-bold text-xs text-gray-900 line-clamp-1 leading-snug group-hover:text-[#2E5A44] transition-colors">
                         {p.name}
                       </p>
                       <div className="flex flex-col mt-2">
-                        {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                        {originalPrice && originalPrice > displayPrice && (
                           <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
-                            {formatRupiah(p.modifiers.originalPrice)}
+                            {formatRupiah(originalPrice)}
                           </span>
                         )}
                         <p className="font-bold text-xs text-gray-800 leading-none">
-                          {formatRupiah(p.price)}
+                          {formatRupiah(displayPrice)}
                         </p>
                       </div>
                     </div>
