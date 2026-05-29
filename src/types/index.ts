@@ -29,6 +29,9 @@ export interface Product {
         isBundle?: boolean;
         bundleGroups?: BundleGroup[];
         freeShipping?: boolean;
+        discountType?: 'fixed' | 'nominal' | 'percent';
+        discountValue?: number;
+        originalPrice?: number;
     };
 }
 

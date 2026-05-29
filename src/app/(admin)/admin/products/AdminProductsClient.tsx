@@ -27,6 +27,9 @@ interface ModifiersData {
   isBundle?: boolean;
   bundleGroups?: any[];
   freeShipping?: boolean;
+  discountType?: 'fixed' | 'nominal' | 'percent';
+  discountValue?: number;
+  originalPrice?: number;
 }
 
 const ALL_ICE_LEVELS = ['Normal Ice', 'Less Ice', 'No Ice'];
@@ -366,8 +369,8 @@ export default function AdminProductsClient({ initialProducts, categories, ingre
       setIsBundle(mods.isBundle || false);
       setBundleGroups(mods.bundleGroups || []);
       setFreeShipping(mods.freeShipping || false);
-      setDiscountType('fixed');
-      setDiscountValue('');
+      setDiscountType(mods.discountType || 'fixed');
+      setDiscountValue(mods.discountValue ? mods.discountValue.toString() : '');
     } else {
       setEditingProduct(null);
       setFormData({ name: '', description: '', price: '', categoryId: categories[0]?.id || '', image: '' });
@@ -597,6 +600,9 @@ export default function AdminProductsClient({ initialProducts, categories, ingre
       modifiers.isBundle = true;
       modifiers.bundleGroups = bundleGroups;
       modifiers.freeShipping = freeShipping;
+      modifiers.discountType = discountType;
+      modifiers.discountValue = Number(discountValue || 0);
+      modifiers.originalPrice = getRegularTotalPrice();
     } else {
       if (modIce.length > 0) modifiers.iceLevel = modIce;
       if (modSugar.length > 0) modifiers.sugarLevel = modSugar;
@@ -1042,6 +1048,11 @@ export default function AdminProductsClient({ initialProducts, categories, ingre
                         {getRegularTotalPrice() > Number(formData.price || 0) && (
                           <p className="text-[9px] font-bold text-emerald-600 mt-1 flex items-center gap-0.5">
                             🎉 Hemat {formatRupiah(getRegularTotalPrice() - Number(formData.price || 0))} ({Math.round(((getRegularTotalPrice() - Number(formData.price || 0)) / getRegularTotalPrice()) * 100)}%)
+                          </p>
+                        )}
+                        {getRegularTotalPrice() === 0 && (
+                          <p className="text-[9px] font-bold text-amber-600 mt-1">
+                            ⚠️ Tambahkan menu pilihan di kelompok pilihan (groups) di bawah agar harga terhitung otomatis.
                           </p>
                         )}
                       </div>

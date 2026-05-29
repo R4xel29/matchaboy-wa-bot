@@ -541,9 +541,16 @@ export default function StorefrontClient({
                         <p className="font-serif font-bold text-xs text-gray-900 line-clamp-1 leading-snug group-hover:text-[#2E5A44] transition-colors">
                           {p.name}
                         </p>
-                        <p className="font-bold text-xs text-[#B48A5E] leading-none mt-2">
-                          {formatRupiah(p.price)}
-                        </p>
+                        <div className="flex flex-col mt-2">
+                          {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                            <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
+                              {formatRupiah(p.modifiers.originalPrice)}
+                            </span>
+                          )}
+                          <p className="font-bold text-xs text-[#B48A5E] leading-none">
+                            {formatRupiah(p.price)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
@@ -605,7 +612,12 @@ export default function StorefrontClient({
                       <p className="font-serif font-bold text-xs text-gray-900 line-clamp-1 leading-snug group-hover:text-[#2E5A44] transition-colors">
                         {p.name}
                       </p>
-                      <div className="mt-2 flex items-baseline justify-between">
+                      <div className="mt-2 flex flex-col items-baseline">
+                        {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                          <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
+                            {formatRupiah(p.modifiers.originalPrice)}
+                          </span>
+                        )}
                         <span className="font-bold text-xs text-[#B48A5E]">
                           {formatRupiah(p.price)}
                         </span>
@@ -670,9 +682,16 @@ export default function StorefrontClient({
                       <p className="font-serif font-bold text-xs text-gray-900 line-clamp-1 leading-snug group-hover:text-[#2E5A44] transition-colors">
                         {p.name}
                       </p>
-                      <p className="font-bold text-xs text-[#B48A5E] leading-none mt-2">
-                        {formatRupiah(p.price)}
-                      </p>
+                      <div className="flex flex-col mt-2">
+                        {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                          <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
+                            {formatRupiah(p.modifiers.originalPrice)}
+                          </span>
+                        )}
+                        <p className="font-bold text-xs text-[#B48A5E] leading-none">
+                          {formatRupiah(p.price)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -729,9 +748,16 @@ export default function StorefrontClient({
                       <p className="font-serif font-bold text-xs text-gray-900 line-clamp-1 leading-snug group-hover:text-[#2E5A44] transition-colors">
                         {p.name}
                       </p>
-                      <p className="font-bold text-xs text-gray-800 leading-none mt-2">
-                        {formatRupiah(p.price)}
-                      </p>
+                      <div className="flex flex-col mt-2">
+                        {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                          <span className="text-[10px] text-muted-foreground line-through leading-none mb-1">
+                            {formatRupiah(p.modifiers.originalPrice)}
+                          </span>
+                        )}
+                        <p className="font-bold text-xs text-gray-800 leading-none">
+                          {formatRupiah(p.price)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );

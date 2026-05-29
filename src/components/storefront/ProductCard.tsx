@@ -92,9 +92,16 @@ export function ProductCard({ product, onAddClick, index }: ProductCardProps) {
         </p>
 
         <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/40">
-          <span className="font-body font-bold text-sm text-brand-700">
-            {formatRupiah(product.price)}
-          </span>
+          <div className="flex flex-col">
+            {product.modifiers?.originalPrice && product.modifiers.originalPrice > product.price && (
+              <span className="text-[10px] text-muted-foreground line-through leading-none mb-0.5">
+                {formatRupiah(product.modifiers.originalPrice)}
+              </span>
+            )}
+            <span className="font-body font-bold text-sm text-brand-700">
+              {formatRupiah(product.price)}
+            </span>
+          </div>
 
           <motion.button
             whileTap={{ scale: 0.9 }}

@@ -329,9 +329,16 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                           <p className="font-serif font-black text-[11px] text-[#2A1A0F] line-clamp-1 group-hover:text-[#946F48] transition-colors">
                             {p.name}
                           </p>
-                          <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] mt-1">
-                            {formatRupiah(p.price)}
-                          </p>
+                          <div className="flex flex-col mt-1">
+                            {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                              <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
+                                {formatRupiah(p.modifiers.originalPrice)}
+                              </span>
+                            )}
+                            <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] leading-none">
+                              {formatRupiah(p.price)}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
@@ -392,9 +399,16 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                           <p className="font-serif font-black text-[11px] text-[#2A1A0F] line-clamp-1 group-hover:text-[#946F48] transition-colors">
                             {p.name}
                           </p>
-                          <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] mt-1">
-                            {formatRupiah(p.price)}
-                          </p>
+                          <div className="flex flex-col mt-1">
+                            {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                              <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
+                                {formatRupiah(p.modifiers.originalPrice)}
+                              </span>
+                            )}
+                            <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] leading-none">
+                              {formatRupiah(p.price)}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
@@ -455,9 +469,16 @@ export function SearchOverlay({ isOpen, onClose, onProductSelect, products, cate
                           <p className="font-serif font-black text-[11px] text-[#2A1A0F] line-clamp-1 group-hover:text-[#946F48] transition-colors">
                             {p.name}
                           </p>
-                          <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] mt-1">
-                            {formatRupiah(p.price)}
-                          </p>
+                          <div className="flex flex-col mt-1">
+                            {p.modifiers?.originalPrice && p.modifiers.originalPrice > p.price && (
+                              <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
+                                {formatRupiah(p.modifiers.originalPrice)}
+                              </span>
+                            )}
+                            <p className="font-serif font-extrabold text-[11px] text-[#B48A5E] leading-none">
+                              {formatRupiah(p.price)}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
@@ -597,9 +618,16 @@ function MenuProductCard({
 
       {/* Harga + Tombol Tambah */}
       <div className="mt-2.5 pt-2 border-t border-[#EADFC9]/25 flex items-center justify-between">
-        <span className="font-serif font-black text-[11px] text-[#B48A5E]">
-          {formatRupiah(product.price)}
-        </span>
+        <div className="flex flex-col">
+          {product.modifiers?.originalPrice && product.modifiers.originalPrice > product.price && (
+            <span className="text-[9px] text-[#8C7864] line-through leading-none mb-0.5">
+              {formatRupiah(product.modifiers.originalPrice)}
+            </span>
+          )}
+          <span className="font-serif font-black text-[11px] text-[#B48A5E]">
+            {formatRupiah(product.price)}
+          </span>
+        </div>
 
         <button
           disabled={isSoldOut}

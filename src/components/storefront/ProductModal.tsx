@@ -290,9 +290,16 @@ export function ProductModal({
                   <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
                     {product.description}
                   </p>
-                  <p className="mt-2 font-bold text-lg text-brand-700">
-                    {formatRupiah(product.price)}
-                  </p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    {product.modifiers?.originalPrice && product.modifiers.originalPrice > product.price && (
+                      <span className="text-sm text-muted-foreground line-through font-medium">
+                        {formatRupiah(product.modifiers.originalPrice)}
+                      </span>
+                    )}
+                    <span className="font-bold text-lg text-brand-700">
+                      {formatRupiah(product.price)}
+                    </span>
+                  </div>
                 </div>
 
                 {isBundleProduct && product.modifiers?.bundleGroups ? (
