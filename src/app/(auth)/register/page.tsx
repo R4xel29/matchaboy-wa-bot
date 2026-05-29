@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -26,12 +26,21 @@ function RegisterPage() {
   const refCode = searchParams.get('ref') || ''
   const { showToast } = useToast()
 
+  useEffect(() => {
+    if (refCode) {
+      document.cookie = `pending_referral_code=${encodeURIComponent(refCode)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    }
+  }, [refCode]);
+
   const handleWALogin = () => {
     setLoading(true);
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const formattedToken = `${token.substring(0,8)}-${token.substring(8,12)}-${token.substring(12,16)}-${token.substring(16,20)}-${token.substring(20,32)}`;
     const otp = Math.floor(10000 + Math.random() * 90000);
-    const waMessage = `Hi Arus, request link untuk Masuk / Daftar ke aplikasi Arus dengan nomor WhatsApp ini dong ${formattedToken}. OTP ${otp}.`;
+    let waMessage = `Hi Arus, request link untuk Masuk / Daftar ke aplikasi Arus dengan nomor WhatsApp ini dong ${formattedToken}. OTP ${otp}.`;
+    if (refCode) {
+      waMessage += ` Ref: ${refCode}.`;
+    }
     
     window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WA_BOT_NUMBER || "6289525672990"}?text=${encodeURIComponent(waMessage)}`, '_blank');
     setLoading(false);

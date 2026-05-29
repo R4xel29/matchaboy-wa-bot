@@ -326,7 +326,11 @@ export async function POST(req: Request) {
       });
 
       // Siapkan URL Magic Link
-      const magicLink = `${appUrl}/verify-wa?token=${magicToken}`;
+      const refMatch = text.match(/Ref:\s*([a-zA-Z0-9_-]+)/i);
+      let magicLink = `${appUrl}/verify-wa?token=${magicToken}`;
+      if (refMatch) {
+        magicLink += `&ref=${refMatch[1]}`;
+      }
 
       // Pesan balasan ke user
       const replyMessage = `Login Berhasil Dikonfirmasi! ✅\n\nSilakan klik link berikut untuk kembali ke aplikasi dan masuk ke akun Anda:\n${magicLink}\n\n(Link berlaku selama 15 menit)`;

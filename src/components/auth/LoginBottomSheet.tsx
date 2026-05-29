@@ -10,6 +10,16 @@ export function LoginBottomSheet({ isOpen, onClose }: { isOpen: boolean, onClose
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const getCookieRef = () => {
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/pending_referral_code=([^;]+)/);
+      if (match) {
+        return decodeURIComponent(match[1]);
+      }
+    }
+    return '';
+  };
+
   const handleWAClick = () => {
     setLoading(true);
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -18,8 +28,11 @@ export function LoginBottomSheet({ isOpen, onClose }: { isOpen: boolean, onClose
     
     let waMessage = `Hi Arus, request link untuk Masuk / Daftar ke aplikasi Arus dengan nomor WhatsApp ini dong ${formattedToken}. OTP ${otp}.`;
     
-    if (typeof window !== 'undefined') {
-      waMessage += ` Domain: ${window.location.origin}.`;
+
+
+    const activeRef = getCookieRef();
+    if (activeRef) {
+      waMessage += ` Ref: ${activeRef}.`;
     }
     
     window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WA_BOT_NUMBER || "6289525672990"}?text=${encodeURIComponent(waMessage)}`, '_blank');
@@ -35,9 +48,7 @@ export function LoginBottomSheet({ isOpen, onClose }: { isOpen: boolean, onClose
     
     let waMessage = `Hi Arus, request link untuk Masuk / Daftar ke aplikasi Arus dengan nomor WhatsApp ini dong ${formattedToken}. OTP ${otp}.`;
     
-    if (typeof window !== 'undefined') {
-      waMessage += ` Domain: ${window.location.origin}.`;
-    }
+
 
     if (targetPhone) {
       let stdPhone = targetPhone.replace(/[^0-9]/g, '');
@@ -47,6 +58,11 @@ export function LoginBottomSheet({ isOpen, onClose }: { isOpen: boolean, onClose
         stdPhone = '62' + stdPhone;
       }
       waMessage += ` HP: ${stdPhone}.`;
+    }
+
+    const activeRef = getCookieRef();
+    if (activeRef) {
+      waMessage += ` Ref: ${activeRef}.`;
     }
     
     window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WA_BOT_NUMBER || "6289525672990"}?text=${encodeURIComponent(waMessage)}`, '_blank');

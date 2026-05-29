@@ -19,7 +19,14 @@ function LoginContent() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const searchParams = useSearchParams()
   const errorParam = searchParams.get("error")
+  const refCode = searchParams.get("ref") || ""
   const { showToast } = useToast()
+
+  useEffect(() => {
+    if (refCode) {
+      document.cookie = `pending_referral_code=${encodeURIComponent(refCode)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    }
+  }, [refCode]);
 
   const handleWALogin = (targetPhone?: string) => {
     setLoadingMessages([
@@ -34,9 +41,7 @@ function LoginContent() {
     
     let waMessage = `Hi Arus, request link untuk Masuk / Daftar ke aplikasi Arus dengan nomor WhatsApp ini dong ${formattedToken}. OTP ${otp}.`;
     
-    if (typeof window !== 'undefined') {
-      waMessage += ` Domain: ${window.location.origin}.`;
-    }
+
 
     if (targetPhone) {
       let stdPhone = targetPhone.replace(/[^0-9]/g, '');
@@ -46,6 +51,18 @@ function LoginContent() {
         stdPhone = '62' + stdPhone;
       }
       waMessage += ` HP: ${stdPhone}.`;
+    }
+
+    let activeRef = refCode;
+    if (!activeRef && typeof document !== 'undefined') {
+      const match = document.cookie.match(/pending_referral_code=([^;]+)/);
+      if (match) {
+        activeRef = decodeURIComponent(match[1]);
+      }
+    }
+    
+    if (activeRef) {
+      waMessage += ` Ref: ${activeRef}.`;
     }
     
     window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WA_BOT_NUMBER || "6289525672990"}?text=${encodeURIComponent(waMessage)}`, '_blank');

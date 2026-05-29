@@ -11,12 +11,17 @@ function VerifyWABody() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
+  const refCode = searchParams.get("ref");
   const [status, setStatus] = useState<"loading" | "success" | "error" | "banned">("loading");
 
   useEffect(() => {
     if (!token) {
       setStatus("error");
       return;
+    }
+
+    if (refCode) {
+      document.cookie = `pending_referral_code=${encodeURIComponent(refCode)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     }
 
     const verifyToken = async () => {
