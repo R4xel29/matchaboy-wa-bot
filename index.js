@@ -4,10 +4,10 @@ const pino = require('pino');
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const qrcodeTerminal = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -15,8 +15,13 @@ app.use(express.json());
 
 // Configuration
 const PORT = process.env.PORT || 3001;
-// URL Webhook Next.js — gunakan URL Vercel production agar magic link selalu benar
-const NEXTJS_WEBHOOK_URL = 'https://arumseduh.vercel.app/api/webhooks/whatsapp';
+const WA_BOT_API_KEY = process.env.WA_BOT_API_KEY || 'default_insecure_key_please_change';
+const NEXTJS_WEBHOOK_URL = process.env.NEXTJS_WEBHOOK_URL || 'https://arumseduh.vercel.app/api/webhooks/whatsapp';
+
+// Warn if using default API key
+if (WA_BOT_API_KEY === 'default_insecure_key_please_change') {
+    console.warn('⚠️  [SECURITY WARNING] Using default API key! Set WA_BOT_API_KEY in .env file');
+}
 
 let sock;
 let latestQr = null;
@@ -270,17 +275,35 @@ app.get('/qr', async (req, res) => {
     }
 });
 
-// Endpoint untuk mengirim pesan
+// Endpoint untuk mengirim pesan - DENGAN AUTENTIKASI
 app.post('/send', async (req, res) => {
     try {
+        // ✅ BUG FIX #3: Validasi API Key
+        const authHeader = req.headers['x-api-key'];
+        
+        if (!authHeader || authHeader !== WA_BOT_API_KEY) {
+            console.warn(`[SECURITY] Unauthorized /send attempt from ${req.ip}`);
+            return res.status(401).json({ 
+                success: false, 
+                error: 'Unauthorized: Invalid or missing API key' 
+            });
+        }
+
         const { phone, message, jid: providedJid } = req.body;
         
+        // Validasi input
         if ((!phone && !providedJid) || !message) {
-            return res.status(400).json({ success: false, error: 'Butuh parameter phone/jid dan message' });
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Butuh parameter phone/jid dan message' 
+            });
         }
 
         if (!sock) {
-            return res.status(500).json({ success: false, error: 'Bot belum siap (belum connect WA)' });
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Bot belum siap (belum connect WA)' 
+            });
         }
 
         // Gunakan JID yang diberikan atau format dari nomor
@@ -293,7 +316,10 @@ app.post('/send', async (req, res) => {
         return res.json({ success: true, message: 'Terkirim' });
     } catch (error) {
         console.error('[!] Gagal kirim pesan via API:', error);
-        return res.status(500).json({ success: false, error: error.message });
+        return res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
 });
 
