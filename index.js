@@ -172,7 +172,13 @@ async function connectToWhatsApp() {
                     text: text,
                     jid: senderJid,
                     directReply: true
-                }, { timeout: 15000 });
+                }, {
+                    headers: {
+                        'x-api-key': WA_BOT_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 15000
+                });
 
                 console.log('[-] Berhasil meneruskan ke Next.js Webhook. Response:', response.data?.message || 'OK');
 
