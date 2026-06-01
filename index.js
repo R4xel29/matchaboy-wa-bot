@@ -183,6 +183,10 @@ async function connectToWhatsApp() {
                 }
             } catch (error) {
                 console.error('[!] Gagal memanggil Next.js Webhook:', error.message);
+                if (error.response) {
+                    console.error('[!] Webhook Response Status:', error.response.status);
+                    console.error('[!] Webhook Response Data:', JSON.stringify(error.response.data));
+                }
                 
                 // Jika respon error memiliki detail pesan balasan, kirim langsung via socket
                 if (error.response && error.response.data && error.response.data.replyMessage) {
