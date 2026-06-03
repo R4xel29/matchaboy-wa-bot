@@ -336,11 +336,11 @@ app.get('/ping', (req, res) => {
 
 app.get('/', (req, res) => {
     if (isConnected) {
-        res.send('✅ Matchaboy WA Bot is Running & Connected 🍵');
+        res.send('✅ Arum Seduh WA Bot is Running & Connected 🍵');
     } else if (latestQr) {
         res.redirect('/qr');
     } else {
-        res.send('⏳ Matchaboy WA Bot is Starting... Please wait.');
+        res.send('⏳ Arum Seduh WA Bot is Starting... Please wait.');
     }
 });
 
@@ -375,10 +375,10 @@ app.get('/qr', async (req, res) => {
         const qrImageDataUrl = await QRCode.toDataURL(latestQr, { width: 400, margin: 2 });
         res.send(`
             <html>
-            <head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Scan QR - Matchaboy Bot</title></head>
+            <head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Scan QR - Arum Seduh Bot</title></head>
             <body style="display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:sans-serif;background:#0a0a0a;color:white;margin:0;">
                 <div style="text-align:center;padding:20px;">
-                    <h2 style="color:#B48A5E;">🍵 Matchaboy WA Bot</h2>
+                    <h2 style="color:#B48A5E;">🍵 Arum Seduh WA Bot</h2>
                     <p style="color:#aaa;font-size:14px;margin-bottom:20px;">Scan QR Code ini dengan WhatsApp di HP Anda</p>
                     <div style="background:white;padding:16px;border-radius:20px;display:inline-block;box-shadow:0 0 40px rgba(180,138,94,0.3);">
                         <img src="${qrImageDataUrl}" alt="QR Code" style="width:300px;height:300px;" />
