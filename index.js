@@ -1,4 +1,4 @@
-const { default: makeWASocket, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys');
 const { usePostgresAuthState } = require('./postgres-auth');
 const pino = require('pino');
 const express = require('express');
@@ -101,6 +101,14 @@ async function connectToWhatsApp() {
 
     sock.ev.on('creds.update', saveCreds);
 
+    // Helper to unwrap message content
+    function getMessageContent(message) {
+        if (!message) return null;
+        if (message.ephemeralMessage) return getMessageContent(message.ephemeralMessage.message);
+        if (message.viewOnceMessage) return getMessageContent(message.viewOnceMessage.message);
+        return message;
+    }
+
     // Menerima pesan masuk
     sock.ev.on('messages.upsert', async (m) => {
         // Hanya proses pesan 'notify' (masuk baru), abaikan 'append' (sinkronisasi histori)
@@ -112,16 +120,24 @@ async function connectToWhatsApp() {
         // Abaikan pesan dari diri sendiri atau pesan tanpa konten
         if (!msg.message || msg.key.fromMe) return;
 
-        // Ambil isi teks pesan
-        const messageType = Object.keys(msg.message)[0];
-        let text = '';
-        if (messageType === 'conversation') {
-            text = msg.message.conversation;
-        } else if (messageType === 'extendedTextMessage') {
-            text = msg.message.extendedTextMessage.text;
-        }
+        const messageContent = getMessageContent(msg.message);
+        if (!messageContent) return;
 
-        if (!text) return;
+        // Ambil isi teks pesan
+        let text = '';
+        let isImage = false;
+        let imageBase64 = null;
+        let mimeType = null;
+
+        if (messageContent.conversation) {
+            text = messageContent.conversation;
+        } else if (messageContent.extendedTextMessage) {
+            text = messageContent.extendedTextMessage.text;
+        } else if (messageContent.imageMessage) {
+            text = messageContent.imageMessage.caption || '';
+            isImage = true;
+            mimeType = messageContent.imageMessage.mimetype || 'image/jpeg';
+        }
 
         // Cari JID telepon asli (s.whatsapp.net) sebagai prioritas
         let realPhoneJid = null;
@@ -138,6 +154,83 @@ async function connectToWhatsApp() {
         const remoteJid = msg.key.remoteJid;
         const senderJid = realPhoneJid || remoteJid;
         const senderNumber = senderJid.split('@')[0];
+
+        if (isImage) {
+            try {
+                console.log('[BOT] Mendeteksi pesan gambar, mengunduh media...');
+                const buffer = await downloadMediaMessage(
+                    msg,
+                    'buffer',
+                    {},
+                    { 
+                        logger: pino({ level: 'silent' }),
+                        reuploadRequest: sock.updateMediaMessage 
+                    }
+                );
+                imageBase64 = buffer.toString('base64');
+                console.log('[BOT] Gambar berhasil diunduh dan dikonversi ke base64.');
+            } catch (err) {
+                console.error('[BOT] Gagal mengunduh gambar:', err.message);
+                try {
+                    await sock.sendMessage(senderJid, { text: '⚠️ Gagal mengunduh gambar bukti pembayaran. Silakan coba kirim ulang.' });
+                } catch {}
+                return;
+            }
+
+            // Tentukan URL Webhook secara dinamis berdasarkan domain asal pada pesan/caption jika ada
+            let uploadUrl = NEXTJS_WEBHOOK_URL.replace('/webhooks/whatsapp', '/webhooks/whatsapp/upload-proof');
+            const domainMatch = text.match(/Domain:\s*(https?:\/\/[^\s]+)/i);
+            if (domainMatch) {
+                let domain = domainMatch[1].trim();
+                if (domain.endsWith('.')) {
+                    domain = domain.substring(0, domain.length - 1);
+                }
+                uploadUrl = `${domain}/api/webhooks/whatsapp/upload-proof`;
+            }
+
+            console.log(`[BOT] Meneruskan bukti pembayaran ke Next.js: ${uploadUrl}`);
+
+            // We parse the orderId from the caption if it starts with "SPMB-"
+            let orderId = null;
+            const spmbMatch = text.toUpperCase().match(/SPMB-[A-Z0-9]+/);
+            if (spmbMatch) {
+                orderId = spmbMatch[0];
+            }
+
+            try {
+                const response = await axios.post(uploadUrl, {
+                    phone: senderNumber,
+                    imageBase64: imageBase64,
+                    mimeType: mimeType,
+                    orderId: orderId,
+                }, {
+                    headers: {
+                        'x-api-key': WA_BOT_API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 30000 // 30s timeout for image upload
+                });
+
+                if (response.data && response.data.replyMessage) {
+                    await sock.sendMessage(senderJid, { text: response.data.replyMessage });
+                    console.log('[BOT] Balasan upload bukti berhasil dikirim ke user.');
+                }
+            } catch (error) {
+                console.error('[!] Gagal memanggil API upload-proof:', error.message);
+                if (error.response && error.response.data && error.response.data.replyMessage) {
+                    try {
+                        await sock.sendMessage(senderJid, { text: error.response.data.replyMessage });
+                    } catch {}
+                } else {
+                    try {
+                        await sock.sendMessage(senderJid, { text: '⚠️ Terjadi kesalahan saat memproses bukti pembayaran Anda. Silakan coba lagi.' });
+                    } catch {}
+                }
+            }
+            return;
+        }
+
+        if (!text) return;
 
         const lowerText = text.toLowerCase();
         const isLoginRequest = lowerText.startsWith('login-') || 
