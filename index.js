@@ -144,10 +144,11 @@ async function connectToWhatsApp() {
                                lowerText.includes('request link untuk masuk / daftar');
         const isDeleteRequest = lowerText.startsWith('hapus-');
         const isVerificationRequest = lowerText.startsWith('verifikasi-');
+        const isSpmbRequest = lowerText.startsWith('spmb-');
 
-        console.log(`[DEBUG] Pesan masuk dari ${remoteJid} (Telepon: ${senderNumber}, JID Kirim: ${senderJid}): "${text}" (isLogin: ${isLoginRequest}, isDelete: ${isDeleteRequest}, isVerify: ${isVerificationRequest})`);
+        console.log(`[DEBUG] Pesan masuk dari ${remoteJid} (Telepon: ${senderNumber}, JID Kirim: ${senderJid}): "${text}" (isLogin: ${isLoginRequest}, isDelete: ${isDeleteRequest}, isVerify: ${isVerificationRequest}, isSpmb: ${isSpmbRequest})`);
 
-        if (isLoginRequest || isDeleteRequest || isVerificationRequest) {
+        if (isLoginRequest || isDeleteRequest || isVerificationRequest || isSpmbRequest) {
             // Tentukan URL Webhook secara dinamis berdasarkan domain asal pada pesan jika ada
             let webhookUrl = NEXTJS_WEBHOOK_URL;
             // Fix #3: regex sebelumnya punya karakter `\.` yang memblokir domain berisi titik (misal vercel.app)
@@ -182,8 +183,14 @@ async function connectToWhatsApp() {
 
                 console.log('[-] Berhasil meneruskan ke Next.js Webhook. Response:', response.data?.message || 'OK');
 
-                // Webhook mengembalikan replyMessage → bot kirim langsung via socket
-                if (response.data && response.data.replyMessage) {
+                // Webhook mengembalikan replyMessage / image → bot kirim langsung via socket
+                if (response.data && response.data.image) {
+                    await sock.sendMessage(senderJid, { 
+                        image: { url: response.data.image }, 
+                        caption: response.data.replyMessage || '' 
+                    });
+                    console.log('[BOT] Pesan gambar & caption berhasil dikirim ke user.');
+                } else if (response.data && response.data.replyMessage) {
                     await sock.sendMessage(senderJid, { text: response.data.replyMessage });
                     console.log('[BOT] Pesan balasan berhasil dikirim ke user.');
                 }
@@ -195,7 +202,17 @@ async function connectToWhatsApp() {
                 }
                 
                 // Jika respon error memiliki detail pesan balasan, kirim langsung via socket
-                if (error.response && error.response.data && error.response.data.replyMessage) {
+                if (error.response && error.response.data && error.response.data.image) {
+                    try {
+                        await sock.sendMessage(senderJid, { 
+                            image: { url: error.response.data.image }, 
+                            caption: error.response.data.replyMessage || '' 
+                        });
+                        console.log('[BOT] Error image reply terkirim ke user via socket.');
+                    } catch (sendErr) {
+                        console.error('[!] Gagal mengirim pesan error gambar ke user:', sendErr.message);
+                    }
+                } else if (error.response && error.response.data && error.response.data.replyMessage) {
                     try {
                         await sock.sendMessage(senderJid, { text: error.response.data.replyMessage });
                         console.log('[BOT] Error reply terkirim ke user via socket.');
