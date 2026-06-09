@@ -128,6 +128,7 @@ async function connectToWhatsApp() {
         let isImage = false;
         let imageBase64 = null;
         let mimeType = null;
+        let locationData = null;
 
         if (messageContent.conversation) {
             text = messageContent.conversation;
@@ -137,6 +138,14 @@ async function connectToWhatsApp() {
             text = messageContent.imageMessage.caption || '';
             isImage = true;
             mimeType = messageContent.imageMessage.mimetype || 'image/jpeg';
+        } else if (messageContent.locationMessage) {
+            locationData = {
+                latitude: messageContent.locationMessage.degreesLatitude,
+                longitude: messageContent.locationMessage.degreesLongitude,
+                address: messageContent.locationMessage.address || messageContent.locationMessage.name || ''
+            };
+            text = messageContent.locationMessage.address || messageContent.locationMessage.name || `${locationData.latitude}, ${locationData.longitude}`;
+            console.log('[BOT] Mendeteksi share location:', locationData);
         }
 
         // Cari JID telepon asli (s.whatsapp.net) sebagai prioritas
@@ -233,6 +242,17 @@ async function connectToWhatsApp() {
         if (!text) return;
 
         const lowerText = text.toLowerCase();
+
+        // ID Grup query handler
+        if (remoteJid && remoteJid.endsWith('@g.us') && (lowerText === '.groupid' || lowerText === '/groupid' || lowerText === 'id grup')) {
+            try {
+                await sock.sendMessage(remoteJid, { text: `ID Grup ini adalah: *${remoteJid}*` });
+            } catch (err) {
+                console.error('Gagal mengirim ID Grup ke WA:', err.message);
+            }
+            return;
+        }
+
         const isLoginRequest = lowerText.startsWith('login-') || 
                                lowerText.includes('request link untuk masuk / daftar');
         const isDeleteRequest = lowerText.startsWith('hapus-');
@@ -266,7 +286,8 @@ async function connectToWhatsApp() {
                     phone: senderNumber,
                     text: text,
                     jid: senderJid,
-                    directReply: true
+                    directReply: true,
+                    location: locationData
                 }, {
                     headers: {
                         'x-api-key': WA_BOT_API_KEY,
@@ -451,3 +472,25 @@ app.listen(PORT, () => {
     console.log(`\n🚀 [SERVER] Express API berjalan di http://localhost:${PORT}`);
     console.log(`- Endpoint untuk kirim pesan: POST http://localhost:${PORT}/send`);
 });
+
+// Ticker to check unpaid orders every 2 minutes
+setInterval(async () => {
+    try {
+        const webhookUri = new URL(NEXTJS_WEBHOOK_URL);
+        const checkUrl = `${webhookUri.protocol}//${webhookUri.host}/api/cron/check-unpaid`;
+        console.log(`[TICKER] Memulai pengecekan pesanan belum dibayar ke: ${checkUrl}`);
+        
+        const res = await axios.get(checkUrl, {
+            headers: {
+                'x-api-key': WA_BOT_API_KEY
+            },
+            timeout: 30000 // 30s
+        });
+        
+        if (res.data) {
+            console.log(`[TICKER] Hasil pengecekan:`, JSON.stringify(res.data));
+        }
+    } catch (err) {
+        console.error(`[TICKER] Gagal menjalankan check-unpaid:`, err.message);
+    }
+}, 2 * 60 * 1000); // 2 minutes
