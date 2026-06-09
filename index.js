@@ -431,13 +431,13 @@ app.post('/send', async (req, res) => {
             });
         }
 
-        const { phone, message, jid: providedJid } = req.body;
+        const { phone, message, jid: providedJid, image } = req.body;
         
         // Validasi input
-        if ((!phone && !providedJid) || !message) {
+        if ((!phone && !providedJid) || (!message && !image)) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Butuh parameter phone/jid dan message' 
+                error: 'Butuh parameter phone/jid dan message atau image' 
             });
         }
 
@@ -451,9 +451,24 @@ app.post('/send', async (req, res) => {
         // Gunakan JID yang diberikan atau format dari nomor
         const jid = providedJid || `${phone}@s.whatsapp.net`;
 
-        // Kirim pesan
-        await sock.sendMessage(jid, { text: message });
-        console.log(`[PESAN KELUAR] Ke ${jid}: Berhasil dikirim`);
+        // Kirim pesan (dengan dukungan gambar & fallback)
+        if (image) {
+            try {
+                await sock.sendMessage(jid, { 
+                    image: { url: image }, 
+                    caption: message || '' 
+                });
+                console.log(`[PESAN KELUAR] Ke ${jid}: Gambar berhasil dikirim`);
+            } catch (imageErr) {
+                console.error(`[!] Gagal kirim gambar ke ${jid}, mengirim teks saja:`, imageErr.message);
+                if (message) {
+                    await sock.sendMessage(jid, { text: message });
+                }
+            }
+        } else {
+            await sock.sendMessage(jid, { text: message });
+            console.log(`[PESAN KELUAR] Ke ${jid}: Berhasil dikirim`);
+        }
 
         return res.json({ success: true, message: 'Terkirim' });
     } catch (error) {
